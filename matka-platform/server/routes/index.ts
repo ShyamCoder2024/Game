@@ -12,6 +12,10 @@ import { userRoutes } from './user.routes';
 import { betRoutes } from './bet.routes';
 import { publicResultRoutes, adminResultRoutes } from './result.routes';
 import { settlementRoutes } from './settlement.routes';
+import { adminRoutes } from './admin.routes';
+import { reportRoutes } from './report.routes';
+import { creditRoutes } from './credit.routes';
+import { exportRoutes } from './export.routes';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { roleMiddleware } from '../middleware/role.middleware';
 import { hierarchyMiddleware } from '../middleware/hierarchy.middleware';
@@ -46,6 +50,7 @@ export async function setupRoutes(app: FastifyInstance) {
             adminApp.register(adminGameRoutes, { prefix: '/api/admin/games' });
             adminApp.register(adminResultRoutes, { prefix: '/api/admin/results' });
             adminApp.register(settlementRoutes, { prefix: '/api/admin/settlement' });
+            adminApp.register(adminRoutes, { prefix: '/api/admin' });
         });
 
         // --- Leader routes (admin + supermaster + master with hierarchy scoping) ---
@@ -55,8 +60,9 @@ export async function setupRoutes(app: FastifyInstance) {
 
             leaderApp.register(leaderRoutes, { prefix: '/api/leaders' });
             leaderApp.register(walletRoutes, { prefix: '/api/wallet' });
-            // TODO Phase 4+: Register report routes
-            // leaderApp.register(reportRoutes, { prefix: '/api/reports' });
+            leaderApp.register(reportRoutes, { prefix: '/api/reports' });
+            leaderApp.register(creditRoutes, { prefix: '/api/credits' });
+            leaderApp.register(exportRoutes, { prefix: '/api/export' });
         });
     });
 }

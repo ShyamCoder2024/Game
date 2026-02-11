@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { api } from '@/lib/api';
+import { useSocketStore } from '@/store/socketStore';
+import { useSocketEvent } from '@/hooks/useSocketEvent';
 import { Trophy, CheckCircle2, Clock } from 'lucide-react';
 
 interface Game {
@@ -51,6 +53,10 @@ export default function ResultsPage() {
     }, []);
 
     useEffect(() => { fetchGames(); fetchResults(); }, [fetchGames, fetchResults]);
+
+    // Auto-refresh when new result is declared via WebSocket
+    const lastResult = useSocketStore((s) => s.lastResult);
+    useSocketEvent(lastResult, () => { fetchResults(); });
 
     const handleDeclare = async () => {
         if (!selectedGame) return;

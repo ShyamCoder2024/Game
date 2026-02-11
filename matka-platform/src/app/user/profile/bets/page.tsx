@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { Target, ArrowLeft } from 'lucide-react';
+import { useSocketStore } from '@/store/socketStore';
+import { useSocketEvent } from '@/hooks/useSocketEvent';
 import Link from 'next/link';
 
 interface BetRow {
@@ -41,6 +43,10 @@ export default function BetHistoryPage() {
     }, [filter]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
+
+    // Auto-refresh when a bet result arrives
+    const lastBetResult = useSocketStore((s) => s.lastBetResult);
+    useSocketEvent(lastBetResult, () => { fetchData(); });
 
     const filteredData = filter === 'all' ? data : data.filter((d) => d.status === filter);
 

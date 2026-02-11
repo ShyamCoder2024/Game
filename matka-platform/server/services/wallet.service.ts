@@ -6,6 +6,8 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../utils/errors';
 import { generateTxnId } from '../utils/idGenerator';
+import { emitToUser } from '../socket/emitters';
+import { WS_EVENTS } from '../socket/events';
 
 // ==========================================
 // TYPES
@@ -91,6 +93,11 @@ export class WalletService {
             };
         });
 
+        // Real-time wallet update
+        emitToUser(userId, WS_EVENTS.WALLET_UPDATE, {
+            balance: result.balance_after,
+        });
+
         return result;
     }
 
@@ -157,6 +164,11 @@ export class WalletService {
                 balance_after: balanceAfter,
                 amount,
             };
+        });
+
+        // Real-time wallet update
+        emitToUser(userId, WS_EVENTS.WALLET_UPDATE, {
+            balance: result.balance_after,
         });
 
         return result;

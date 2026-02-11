@@ -1,9 +1,10 @@
 'use client';
 
 import { useAuthStore } from '@/store/authStore';
+import { useSocketStore } from '@/store/socketStore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Menu, LogOut, Bell } from 'lucide-react';
+import { Menu, LogOut, Bell, Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface SMHeaderProps {
@@ -12,6 +13,7 @@ interface SMHeaderProps {
 
 export function SMHeader({ onMenuClick }: SMHeaderProps) {
     const { user, logout } = useAuthStore();
+    const liveBalance = useSocketStore((s) => s.liveBalance);
     const router = useRouter();
 
     const handleLogout = () => {
@@ -48,6 +50,10 @@ export function SMHeader({ onMenuClick }: SMHeaderProps) {
                     <Bell size={18} className="text-gray-600" />
                     <span className="absolute top-1 right-1 w-2 h-2 bg-[#7C3AED] rounded-full" />
                 </button>
+                <div className="flex items-center gap-1.5 bg-[#7C3AED]/10 text-[#7C3AED] rounded-full px-3 py-1 text-xs font-bold">
+                    <Wallet size={13} />
+                    ₹{(liveBalance ?? 0).toLocaleString('en-IN')}
+                </div>
                 <Badge
                     className="text-xs text-white"
                     style={{ backgroundColor: '#7C3AED' }}
