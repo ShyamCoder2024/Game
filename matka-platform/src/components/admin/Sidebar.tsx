@@ -1,0 +1,185 @@
+'use client';
+
+// src/components/admin/Sidebar.tsx
+// Dark sidebar with nav items, active state, collapsible on mobile
+
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import {
+    LayoutDashboard,
+    Users,
+    Gamepad2,
+    UserPlus,
+    Scale,
+    FileText,
+    Settings,
+    ChevronDown,
+    Crown,
+    Shield,
+    User,
+    Star,
+    X,
+} from 'lucide-react';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+
+interface SidebarProps {
+    open: boolean;
+    onClose: () => void;
+}
+
+interface NavItem {
+    label: string;
+    href?: string;
+    icon: React.ElementType;
+    children?: { label: string; href: string; icon: React.ElementType }[];
+}
+
+const navItems: NavItem[] = [
+    { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    {
+        label: 'Leaders',
+        icon: Users,
+        children: [
+            { label: 'Super Masters', href: '/admin/leaders/super-masters', icon: Crown },
+            { label: 'Masters', href: '/admin/leaders/masters', icon: Shield },
+            { label: 'Users', href: '/admin/leaders/users', icon: User },
+            { label: 'Special Masters', href: '/admin/leaders/special', icon: Star },
+        ],
+    },
+    { label: 'Games', href: '/admin/games', icon: Gamepad2 },
+    { label: 'Clients', href: '/admin/clients', icon: UserPlus },
+    { label: 'Results', href: '/admin/results', icon: FileText },
+    { label: 'Settlement', href: '/admin/settlement', icon: Scale },
+    { label: 'Content', href: '/admin/content', icon: FileText },
+    { label: 'Settings', href: '/admin/settings', icon: Settings },
+];
+
+export function Sidebar({ open, onClose }: SidebarProps) {
+    const pathname = usePathname();
+    const [expandedMenus, setExpandedMenus] = useState<string[]>(['Leaders']);
+
+    const toggleMenu = (label: string) => {
+        setExpandedMenus((prev) =>
+            prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+        );
+    };
+
+    const isActive = (href: string) => {
+        if (href === '/admin') return pathname === '/admin';
+        return pathname.startsWith(href);
+    };
+
+    return (
+        <>
+            {/* Mobile overlay */}
+            {open && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                    onClick={onClose}
+                />
+            )}
+
+            {/* Sidebar */}
+            <aside
+                className={cn(
+                    'fixed top-0 left-0 z-50 h-full w-64 bg-slate-800 text-white flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto',
+                    open ? 'translate-x-0' : '-translate-x-full'
+                )}
+            >
+                {/* Logo header */}
+                <div className="flex items-center justify-between h-16 px-5 border-b border-slate-700">
+                    <Link href="/admin" className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                            <span className="text-lg font-bold text-white">M</span>
+                        </div>
+                        <span className="text-lg font-bold tracking-tight">Matka Admin</span>
+                    </Link>
+                    <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* Navigation */}
+                <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                    {navItems.map((item) => {
+                        if (item.children) {
+                            const isExpanded = expandedMenus.includes(item.label);
+                            const hasActiveChild = item.children.some((child) =>
+                                isActive(child.href)
+                            );
+
+                            return (
+                                <div key={item.label}>
+                                    <button
+                                        onClick={() => toggleMenu(item.label)}
+                                        className={cn(
+                                            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                                            hasActiveChild
+                                                ? 'text-white bg-slate-700/50'
+                                                : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                                        )}
+                                    >
+                                        <item.icon size={18} />
+                                        <span className="flex-1 text-left">{item.label}</span>
+                                        <ChevronDown
+                                            size={16}
+                                            className={cn(
+                                                'transition-transform duration-200',
+                                                isExpanded && 'rotate-180'
+                                            )}
+                                        />
+                                    </button>
+                                    {isExpanded && (
+                                        <div className="mt-1 ml-4 pl-3 border-l border-slate-700 space-y-1">
+                                            {item.children.map((child) => (
+                                                <Link
+                                                    key={child.href}
+                                                    href={child.href}
+                                                    onClick={onClose}
+                                                    className={cn(
+                                                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                                                        isActive(child.href)
+                                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                                                            : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                                                    )}
+                                                >
+                                                    <child.icon size={16} />
+                                                    <span>{child.label}</span>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href!}
+                                onClick={onClose}
+                                className={cn(
+                                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                                    isActive(item.href!)
+                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                                )}
+                            >
+                                <item.icon size={18} />
+                                <span>{item.label}</span>
+                            </Link>
+                        );
+                    })}
+                </nav>
+
+                {/* Footer */}
+                <div className="p-4 border-t border-slate-700">
+                    <p className="text-xs text-slate-500 text-center">
+                        Matka Platform v1.0
+                    </p>
+                </div>
+            </aside>
+        </>
+    );
+}

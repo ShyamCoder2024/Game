@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================
+   MATKA PLATFORM — Global Styles
+   ========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ==========================================
+   SCROLLBAR
+   ========================================== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* ==========================================
+   UTILITY CLASSES
+   ========================================== */
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-profit {
+    @apply text-green-600 font-semibold;
+  }
+
+  .text-loss {
+    @apply text-red-600 font-semibold;
+  }
+
+  .badge-active {
+    @apply bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-blocked {
+    @apply bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-pending {
+    @apply bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-won {
+    @apply bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-lost {
+    @apply bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .grand-total-row {
+    @apply bg-blue-50 font-bold border-t-2 border-blue-200;
+  }
+}

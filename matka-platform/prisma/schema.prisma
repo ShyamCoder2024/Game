@@ -1,0 +1,552 @@
+// prisma/schema.prisma
+// Matka Betting Platform — Complete Database Schema
+// 19 Tables | PostgreSQL 16
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum Role {
+  admin
+  supermaster
+  master
+  user
+}
+
+enum BetType {
+  SINGLE_AKDA
+  SINGLE_PATTI
+  DOUBLE_PATTI
+  TRIPLE_PATTI
+  JODI
+}
+
+enum BetStatus {
+  pending
+  won
+  lost
+  cancelled
+  rolled_back
+}
+
+enum GameSession {
+  OPEN
+  CLOSE
+  FULL
+}
+
+enum TransactionType {
+  CREDIT_IN
+  CREDIT_OUT
+  BET_PLACED
+  BET_WON
+  BET_CANCELLED
+  WITHDRAWAL
+  ROLLBACK_DEBIT
+  ROLLBACK_CREDIT
+  LOAN_IN
+  LOAN_OUT
+  LOAN_REPAYMENT
+  MANUAL_ADJUSTMENT
+}
+
+enum TransactionDirection {
+  CREDIT
+  DEBIT
+}
+
+enum SettlementStatus {
+  completed
+  rolled_back
+}
+
+enum LoanType {
+  CREDIT_GIVEN
+  CREDIT_RETURNED
+  LOAN_GIVEN
+  LOAN_REPAID
+}
+
+enum LoanStatus {
+  active
+  partially_paid
+  fully_paid
+  written_off
+}
+
+enum BackupStatus {
+  in_progress
+  completed
+  failed
+}
+
+// ==========================================
+// MODELS
+// ==========================================
+
+model User {
+  id                 Int       @id @default(autoincrement())
+  user_id            String    @unique
+  name               String
+  password_hash      String
+  role               Role
+  created_by         Int?
+  wallet_balance     Int       @default(0)
+  deal_percentage    Float     @default(0)
+  my_matka_share     Float     @default(0)
+  agent_matka_share  Float     @default(0)
+  matka_commission   Float     @default(0)
+  credit_limit       Int       @default(0)
+  fix_limit          Int       @default(0)
+  exposure           Int       @default(0)
+  is_special         Boolean   @default(false)
+  special_notes      String?
+  is_blocked         Boolean   @default(false)
+  blocked_at         DateTime?
+  blocked_by         Int?
+  blocked_reason     String?
+  is_active          Boolean   @default(true)
+  is_deleted         Boolean   @default(false)
+  last_login_at      DateTime?
+  last_login_ip      String?
+  metadata           Json?     @default("{}")
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  // Self-referential hierarchy
+  parent             User?     @relation("Hierarchy", fields: [created_by], references: [id])
+  children           User[]    @relation("Hierarchy")
+  blocker            User?     @relation("Blocker", fields: [blocked_by], references: [id])
+  blocked_users      User[]    @relation("Blocker")
+
+  // Relations
+  bets               Bet[]
+  transactions       Transaction[]
+  pnl_records        MemberPnl[]
+  loans_received     CreditLoan[]   @relation("LoanReceiver")
+  loans_given        CreditLoan[]   @relation("LoanGiver")
+  results_declared   Result[]       @relation("ResultDeclarer")
+  results_rolled     Result[]       @relation("ResultRoller")
+  settlements_run    Settlement[]   @relation("Settler")
+  settlements_rolled Settlement[]   @relation("SettlementRoller")
+  admin_actions      AdminAction[]
+  login_logs         LoginLog[]
+  announcements      Announcement[]
+  banners            Banner[]
+  rules_updated      RulesContent[]
+  backups_triggered  DbBackup[]
+  windows_closed     BettingWindow[] @relation("WindowCloser")
+  blocked_bets_set   BlockedBet[]
+  multipliers_changed PayoutMultiplier[] @relation("MultiplierChanger")
+  settlement_entries SettlementEntry[]
+
+  @@index([role])
+  @@index([created_by])
+  @@index([is_blocked])
+  @@index([is_special])
+  @@index([role, is_blocked, is_deleted])
+  @@index([user_id])
+}
+
+model Game {
+  id             Int       @id @default(autoincrement())
+  name           String    @unique
+  slug           String    @unique
+  open_time      String
+  close_time     String
+  result_time    String
+  color_code     String    @default("#3B82F6")
+  display_order  Int       @default(0)
+  is_active      Boolean   @default(true)
+  is_deleted     Boolean   @default(false)
+  metadata       Json?     @default("{}")
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  // Relations
+  bets             Bet[]
+  results          Result[]
+  betting_windows  BettingWindow[]
+  multipliers      PayoutMultiplier[]
+  blocked_bets     BlockedBet[]
+  pnl_records      MemberPnl[]
+  settlements      Settlement[]
+
+  @@index([is_active])
+  @@index([display_order])
+}
+
+model PayoutMultiplier {
+  id                    Int       @id @default(autoincrement())
+  game_id               Int?
+  bet_type              BetType
+  multiplier            Int
+  is_active             Boolean   @default(true)
+  changed_by            Int?
+  changed_at            DateTime?
+  previous_multiplier   Int?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  game                  Game?     @relation(fields: [game_id], references: [id])
+  changer               User?     @relation("MultiplierChanger", fields: [changed_by], references: [id])
+
+  @@unique([game_id, bet_type])
+  @@index([game_id, bet_type, is_active])
+}
+
+model BettingWindow {
+  id              Int       @id @default(autoincrement())
+  game_id         Int
+  date            String
+  session         GameSession @default(FULL)
+  is_open         Boolean   @default(true)
+  opens_at        DateTime
+  closes_at       DateTime
+  total_bets      Int       @default(0)
+  total_amount    Int       @default(0)
+  closed_manually Boolean   @default(false)
+  closed_by       Int?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  game            Game      @relation(fields: [game_id], references: [id])
+  closer          User?     @relation("WindowCloser", fields: [closed_by], references: [id])
+  bets            Bet[]
+
+  @@unique([game_id, date, session])
+  @@index([is_open, closes_at])
+  @@index([game_id, date])
+  @@index([date])
+}
+
+model Bet {
+  id                Int        @id @default(autoincrement())
+  bet_id            String     @unique
+  user_id           Int
+  game_id           Int
+  date              String
+  session           GameSession
+  bet_type          BetType
+  bet_number        String
+  bet_amount        Int
+  payout_multiplier Int
+  potential_win     Int
+  status            BetStatus  @default(pending)
+  win_amount        Int        @default(0)
+  result_id         Int?
+  settlement_id     Int?
+  settled_at        DateTime?
+  is_rolled_back    Boolean    @default(false)
+  rolled_back_at    DateTime?
+  window_id         Int?
+  placed_ip         String?
+  metadata          Json?      @default("{}")
+  created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt
+
+  user              User       @relation(fields: [user_id], references: [id])
+  game              Game       @relation(fields: [game_id], references: [id])
+  result            Result?    @relation(fields: [result_id], references: [id])
+  settlement        Settlement? @relation(fields: [settlement_id], references: [id])
+  window            BettingWindow? @relation(fields: [window_id], references: [id])
+  settlement_entries SettlementEntry[]
+
+  @@index([game_id, date, status])
+  @@index([user_id, date])
+  @@index([user_id, status])
+  @@index([result_id])
+  @@index([settlement_id])
+  @@index([date, status])
+  @@index([created_at(sort: Desc)])
+}
+
+model Result {
+  id              Int       @id @default(autoincrement())
+  game_id         Int
+  date            String
+  session         GameSession
+  open_panna      String?
+  open_single     Int?
+  close_panna     String?
+  close_single    Int?
+  jodi            String?
+  declared_by     Int
+  declared_at     DateTime  @default(now())
+  is_settled      Boolean   @default(false)
+  settled_at      DateTime?
+  is_rolled_back  Boolean   @default(false)
+  rolled_back_at  DateTime?
+  rolled_back_by  Int?
+  is_deleted      Boolean   @default(false)
+  deleted_at      DateTime?
+  metadata        Json?     @default("{}")
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  game            Game      @relation(fields: [game_id], references: [id])
+  declarer        User      @relation("ResultDeclarer", fields: [declared_by], references: [id])
+  roller          User?     @relation("ResultRoller", fields: [rolled_back_by], references: [id])
+  bets            Bet[]
+  settlement      Settlement?
+
+  @@unique([game_id, date, session])
+  @@index([game_id, date])
+  @@index([date, is_deleted])
+  @@index([is_settled, is_rolled_back])
+}
+
+model Transaction {
+  id              Int                  @id @default(autoincrement())
+  txn_id          String               @unique
+  user_id         Int
+  type            TransactionType
+  amount          Int
+  direction       TransactionDirection
+  balance_before  Int
+  balance_after   Int
+  reference       String?
+  reference_type  String?
+  performed_by    Int?
+  notes           String?
+  metadata        Json?                @default("{}")
+  created_at      DateTime             @default(now())
+
+  user            User                 @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, created_at(sort: Desc)])
+  @@index([type])
+  @@index([reference])
+  @@index([performed_by])
+  @@index([created_at(sort: Desc)])
+}
+
+model MemberPnl {
+  id                Int      @id @default(autoincrement())
+  user_id           Int
+  game_id           Int
+  date              String
+  pnl               Int      @default(0)
+  total_bets_volume Int      @default(0)
+  total_bets_count  Int      @default(0)
+  winners_count     Int      @default(0)
+  losers_count      Int      @default(0)
+  total_payout      Int      @default(0)
+  commission_earned Int      @default(0)
+  is_rolled_back    Boolean  @default(false)
+  metadata          Json?    @default("{}")
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  user              User     @relation(fields: [user_id], references: [id])
+  game              Game     @relation(fields: [game_id], references: [id])
+
+  @@unique([user_id, game_id, date])
+  @@index([user_id, date])
+  @@index([game_id, date])
+  @@index([date])
+}
+
+model Settlement {
+  id               Int              @id @default(autoincrement())
+  result_id        Int              @unique
+  game_id          Int
+  date             String
+  session          GameSession
+  total_bets       Int              @default(0)
+  total_bet_amount Int              @default(0)
+  winners_count    Int              @default(0)
+  losers_count     Int              @default(0)
+  total_payout     Int              @default(0)
+  net_pnl          Int              @default(0)
+  status           SettlementStatus @default(completed)
+  settled_by       Int
+  settled_at       DateTime         @default(now())
+  rolled_back_at   DateTime?
+  rolled_back_by   Int?
+  duration_ms      Int?
+  metadata         Json?            @default("{}")
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
+
+  result           Result           @relation(fields: [result_id], references: [id])
+  game             Game             @relation(fields: [game_id], references: [id])
+  settler          User             @relation("Settler", fields: [settled_by], references: [id])
+  roller           User?            @relation("SettlementRoller", fields: [rolled_back_by], references: [id])
+  bets             Bet[]
+  entries          SettlementEntry[]
+
+  @@index([game_id, date])
+  @@index([status])
+}
+
+model SettlementEntry {
+  id              Int      @id @default(autoincrement())
+  settlement_id   Int
+  bet_id          Int
+  user_id         Int
+  outcome         String   // "won" or "lost"
+  bet_amount      Int
+  win_amount      Int      @default(0)
+  created_at      DateTime @default(now())
+
+  settlement      Settlement @relation(fields: [settlement_id], references: [id])
+  bet             Bet        @relation(fields: [bet_id], references: [id])
+  user            User       @relation(fields: [user_id], references: [id])
+
+  @@index([settlement_id])
+  @@index([user_id, created_at(sort: Desc)])
+}
+
+model CreditLoan {
+  id           Int        @id @default(autoincrement())
+  loan_id      String     @unique
+  user_id      Int
+  given_by     Int
+  type         LoanType
+  amount       Int
+  outstanding  Int
+  status       LoanStatus @default(active)
+  notes        String?
+  metadata     Json?      @default("{}")
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+
+  receiver     User       @relation("LoanReceiver", fields: [user_id], references: [id])
+  giver        User       @relation("LoanGiver", fields: [given_by], references: [id])
+
+  @@index([user_id, status])
+  @@index([given_by])
+}
+
+model Announcement {
+  id             Int       @id @default(autoincrement())
+  title          String
+  message        String
+  is_active      Boolean   @default(true)
+  starts_at      DateTime?
+  ends_at        DateTime?
+  display_order  Int       @default(0)
+  created_by     Int
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  creator        User      @relation(fields: [created_by], references: [id])
+
+  @@index([is_active, starts_at, ends_at])
+}
+
+model Banner {
+  id             Int       @id @default(autoincrement())
+  image_url      String
+  title          String?
+  link_url       String?
+  display_order  Int       @default(0)
+  is_active      Boolean   @default(true)
+  created_by     Int
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  creator        User      @relation(fields: [created_by], references: [id])
+
+  @@index([is_active, display_order])
+}
+
+model RulesContent {
+  id          Int      @id @default(autoincrement())
+  content     String
+  updated_by  Int
+  version     Int      @default(1)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  updater     User     @relation(fields: [updated_by], references: [id])
+}
+
+model AppSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  category    String   @default("general")
+  description String?
+  updated_by  Int?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model AdminAction {
+  id           Int      @id @default(autoincrement())
+  admin_id     Int
+  action_type  String
+  entity_type  String
+  entity_id    Int?
+  old_value    String?
+  new_value    String?
+  ip_address   String?
+  user_agent   String?
+  notes        String?
+  created_at   DateTime @default(now())
+
+  admin        User     @relation(fields: [admin_id], references: [id])
+
+  @@index([admin_id, created_at(sort: Desc)])
+  @@index([entity_type, entity_id])
+  @@index([action_type])
+  @@index([created_at(sort: Desc)])
+}
+
+model LoginLog {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  success        Boolean
+  ip_address     String
+  user_agent     String?
+  failure_reason String?
+  created_at     DateTime @default(now())
+
+  user           User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, created_at(sort: Desc)])
+  @@index([ip_address, created_at(sort: Desc)])
+  @@index([success, created_at(sort: Desc)])
+}
+
+model DbBackup {
+  id            Int          @id @default(autoincrement())
+  filename      String
+  s3_url        String?
+  size_bytes    Int          @default(0)
+  status        BackupStatus
+  triggered_by  Int
+  error_message String?
+  started_at    DateTime     @default(now())
+  completed_at  DateTime?
+  created_at    DateTime     @default(now())
+
+  triggerer     User         @relation(fields: [triggered_by], references: [id])
+}
+
+model BlockedBet {
+  id          Int      @id @default(autoincrement())
+  game_id     Int?
+  bet_type    BetType?
+  is_blocked  Boolean  @default(true)
+  blocked_by  Int
+  reason      String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  game        Game?    @relation(fields: [game_id], references: [id])
+  blocker     User     @relation(fields: [blocked_by], references: [id])
+
+  @@index([game_id, bet_type, is_blocked])
+}
