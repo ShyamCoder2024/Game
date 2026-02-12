@@ -35,12 +35,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     return (
-        <div className="min-h-screen flex bg-slate-50">
+        <div className="min-h-screen bg-slate-50">
             {/* Sidebar */}
             <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             {/* Main content area */}
-            <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-screen overflow-hidden lg:ml-64">
                 {/* Header */}
                 <Header onMenuClick={() => setSidebarOpen(true)} />
 

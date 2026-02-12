@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { UserCheck, Wallet, Scale, Trophy, Lock, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,10 +36,18 @@ export function MasterSidebar({ open, onClose }: MasterSidebarProps) {
             >
                 <div className="h-16 flex items-center justify-between px-5 border-b border-white/10">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-[#0891B2] flex items-center justify-center font-bold text-sm">
-                            M
+                        <div className="relative w-10 h-10">
+                            <Image
+                                src="/logo.png"
+                                alt="Logo"
+                                fill
+                                className="object-contain"
+                            />
                         </div>
-                        <span className="font-semibold text-lg">Master Panel</span>
+                        <div className="flex flex-col">
+                            <span className="font-bold text-base leading-tight">All India</span>
+                            <span className="text-xs text-slate-400">Master Panel</span>
+                        </div>
                     </div>
                     <button onClick={onClose} className="lg:hidden p-1 hover:bg-white/10 rounded">
                         <X size={20} />
@@ -69,7 +78,7 @@ export function MasterSidebar({ open, onClose }: MasterSidebarProps) {
                 </nav>
 
                 <div className="px-5 py-3 border-t border-white/10 text-xs text-slate-400">
-                    Matka Platform v1.0
+                    All India v1.0
                 </div>
             </aside>
         </>

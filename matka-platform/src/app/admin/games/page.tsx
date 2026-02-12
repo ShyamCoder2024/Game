@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { api } from '@/lib/api';
 import { BET_TYPES } from '@/lib/constants';
+import { motion } from 'framer-motion';
 import {
     Gamepad2, Plus, Power, Clock, Settings2, X, Save,
 } from 'lucide-react';
@@ -142,43 +143,59 @@ export default function GamesPage() {
                             </CardContent>
                         </Card>
                     ))
-                    : games.map((game) => (
-                        <Card key={game.id} className="border-0 shadow-md hover:shadow-lg transition-shadow">
-                            <CardContent className="p-5">
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex items-center gap-2">
-                                        <Gamepad2 size={18} className="text-blue-500" />
-                                        <h3 className="font-semibold text-slate-800">{game.name}</h3>
-                                    </div>
-                                    <Badge className={game.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}>
-                                        {game.is_active ? 'Active' : 'Inactive'}
-                                    </Badge>
-                                </div>
+                    : games.length === 0 ? (
+                        <div className="col-span-full py-12 text-center text-slate-400 bg-white rounded-xl shadow-sm border border-slate-100">
+                            <Gamepad2 size={48} className="mx-auto text-slate-200 mb-3" />
+                            <p className="text-lg font-medium text-slate-600">No games found</p>
+                            <p className="text-sm text-slate-400 mt-1">Create a new game to get started</p>
+                        </div>
+                    )
+                        : games.map((game, i) => (
+                            <motion.div
+                                key={game.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <Card className="border-0 shadow-md hover:shadow-lg transition-shadow h-full">
+                                    <CardContent className="p-5">
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <Gamepad2 size={18} className="text-blue-500" />
+                                                <h3 className="font-semibold text-slate-800">{game.name}</h3>
+                                            </div>
+                                            <Badge className={game.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}>
+                                                {game.is_active ? 'Active' : 'Inactive'}
+                                            </Badge>
+                                        </div>
 
-                                <div className="space-y-2 text-sm text-slate-600">
-                                    <div className="flex items-center gap-2">
-                                        <Clock size={14} className="text-slate-400" />
-                                        <span>Open: {game.open_time} | Close: {game.close_time}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Clock size={14} className="text-slate-400" />
-                                        <span>Result: {game.result_time}</span>
-                                    </div>
-                                </div>
+                                        <div className="space-y-2 text-sm text-slate-600">
+                                            <div className="flex items-center gap-2">
+                                                <Clock size={14} className="text-slate-400" />
+                                                <span>Open: {game.open_time} | Close: {game.close_time}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Clock size={14} className="text-slate-400" />
+                                                <span>Result: {game.result_time}</span>
+                                            </div>
+                                        </div>
 
-                                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100">
-                                    <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setToggleTarget(game)}>
-                                        <Power size={12} className="mr-1" />
-                                        {game.is_active ? 'Disable' : 'Enable'}
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openMultipliers(game)}>
-                                        <Settings2 size={12} className="mr-1" />
-                                        Multipliers
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100">
+                                            <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setToggleTarget(game)}>
+                                                <Power size={12} className="mr-1" />
+                                                {game.is_active ? 'Disable' : 'Enable'}
+                                            </Button>
+                                            <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openMultipliers(game)}>
+                                                <Settings2 size={12} className="mr-1" />
+                                                Multipliers
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        ))}
             </div>
 
             {/* Toggle confirmation */}
@@ -196,76 +213,80 @@ export default function GamesPage() {
             />
 
             {/* Add game modal */}
-            {addOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setAddOpen(false)} />
-                    <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
-                        <button onClick={() => setAddOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={18} /></button>
-                        <h3 className="text-lg font-semibold text-slate-800 mb-4">Add New Game</h3>
-                        <form onSubmit={handleAdd} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Game Name</Label>
-                                <Input value={addName} onChange={(e) => setAddName(e.target.value)} placeholder="e.g. KALYAN" required className="bg-slate-50" />
-                            </div>
-                            <div className="grid grid-cols-3 gap-3">
+            {
+                addOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setAddOpen(false)} />
+                        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
+                            <button onClick={() => setAddOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={18} /></button>
+                            <h3 className="text-lg font-semibold text-slate-800 mb-4">Add New Game</h3>
+                            <form onSubmit={handleAdd} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label className="text-xs">Open Time</Label>
-                                    <Input value={addOpenTime} onChange={(e) => setAddOpenTime(e.target.value)} placeholder="09:00" required className="bg-slate-50" />
+                                    <Label>Game Name</Label>
+                                    <Input value={addName} onChange={(e) => setAddName(e.target.value)} placeholder="e.g. KALYAN" required className="bg-slate-50" />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs">Close Time</Label>
-                                    <Input value={addCloseTime} onChange={(e) => setAddCloseTime(e.target.value)} placeholder="11:00" required className="bg-slate-50" />
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Open Time</Label>
+                                        <Input value={addOpenTime} onChange={(e) => setAddOpenTime(e.target.value)} placeholder="09:00" required className="bg-slate-50" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Close Time</Label>
+                                        <Input value={addCloseTime} onChange={(e) => setAddCloseTime(e.target.value)} placeholder="11:00" required className="bg-slate-50" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Result Time</Label>
+                                        <Input value={addResultTime} onChange={(e) => setAddResultTime(e.target.value)} placeholder="11:30" required className="bg-slate-50" />
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs">Result Time</Label>
-                                    <Input value={addResultTime} onChange={(e) => setAddResultTime(e.target.value)} placeholder="11:30" required className="bg-slate-50" />
-                                </div>
-                            </div>
-                            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={addLoading}>
-                                {addLoading ? 'Adding...' : 'Add Game'}
-                            </Button>
-                        </form>
+                                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={addLoading}>
+                                    {addLoading ? 'Adding...' : 'Add Game'}
+                                </Button>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Multiplier editor modal */}
-            {multiplierGame && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMultiplierGame(null)} />
-                    <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
-                        <button onClick={() => setMultiplierGame(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={18} /></button>
-                        <h3 className="text-lg font-semibold text-slate-800 mb-1">Multipliers — {multiplierGame.name}</h3>
-                        <p className="text-xs text-slate-500 mb-4">Set payout multipliers per bet type</p>
-                        <div className="space-y-3">
-                            {multipliers.map((mul, i) => {
-                                const bt = BET_TYPES[mul.bet_type as keyof typeof BET_TYPES];
-                                return (
-                                    <div key={mul.bet_type} className="flex items-center justify-between gap-3">
-                                        <Label className="text-sm w-32">{bt?.name || mul.bet_type}</Label>
-                                        <Input
-                                            type="number"
-                                            min="1"
-                                            value={mul.multiplier}
-                                            onChange={(e) => {
-                                                const updated = [...multipliers];
-                                                updated[i] = { ...mul, multiplier: Number(e.target.value) };
-                                                setMultipliers(updated);
-                                            }}
-                                            className="w-24 bg-slate-50 text-right font-mono"
-                                        />
-                                        <span className="text-xs text-slate-400">x</span>
-                                    </div>
-                                );
-                            })}
+            {
+                multiplierGame && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMultiplierGame(null)} />
+                        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
+                            <button onClick={() => setMultiplierGame(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={18} /></button>
+                            <h3 className="text-lg font-semibold text-slate-800 mb-1">Multipliers — {multiplierGame.name}</h3>
+                            <p className="text-xs text-slate-500 mb-4">Set payout multipliers per bet type</p>
+                            <div className="space-y-3">
+                                {multipliers.map((mul, i) => {
+                                    const bt = BET_TYPES[mul.bet_type as keyof typeof BET_TYPES];
+                                    return (
+                                        <div key={mul.bet_type} className="flex items-center justify-between gap-3">
+                                            <Label className="text-sm w-32">{bt?.name || mul.bet_type}</Label>
+                                            <Input
+                                                type="number"
+                                                min="1"
+                                                value={mul.multiplier}
+                                                onChange={(e) => {
+                                                    const updated = [...multipliers];
+                                                    updated[i] = { ...mul, multiplier: Number(e.target.value) };
+                                                    setMultipliers(updated);
+                                                }}
+                                                className="w-24 bg-slate-50 text-right font-mono"
+                                            />
+                                            <span className="text-xs text-slate-400">x</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <Button className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white" onClick={saveMultipliers} disabled={mulLoading}>
+                                <Save size={14} className="mr-1" />
+                                {mulLoading ? 'Saving...' : 'Save Multipliers'}
+                            </Button>
                         </div>
-                        <Button className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white" onClick={saveMultipliers} disabled={mulLoading}>
-                            <Save size={14} className="mr-1" />
-                            {mulLoading ? 'Saving...' : 'Save Multipliers'}
-                        </Button>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

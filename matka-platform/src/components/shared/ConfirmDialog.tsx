@@ -83,16 +83,9 @@ export function ConfirmDialog({
                     <Button
                         className={styles.buttonClass}
                         onClick={onConfirm}
-                        disabled={loading}
+                        loading={loading}
                     >
-                        {loading ? (
-                            <span className="flex items-center gap-2">
-                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                Processing...
-                            </span>
-                        ) : (
-                            confirmLabel
-                        )}
+                        {confirmLabel}
                     </Button>
                 </div>
             </div>

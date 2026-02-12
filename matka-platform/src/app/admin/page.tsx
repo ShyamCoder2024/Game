@@ -22,6 +22,7 @@ import {
     Clock,
     Gamepad2,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface DashboardStats {
     totalBetsToday: number;
@@ -206,48 +207,73 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* P/L Chart - 2 columns */}
                 <div className="lg:col-span-2">
-                    <PnlChart data={placeholderPnl} loading={loading} />
+                    {loading ? (
+                        <Skeleton className="h-[350px] w-full rounded-xl" />
+                    ) : (
+                        <PnlChart data={placeholderPnl} loading={loading} />
+                    )}
                 </div>
 
                 {/* Upcoming results */}
-                <Card className="border-0 shadow-md">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
-                            <Clock size={16} className="text-amber-500" />
-                            Upcoming Results
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {upcoming.length > 0 ? (
-                            <div className="space-y-3">
-                                {upcoming.map((item, i) => (
-                                    <div
-                                        key={i}
-                                        className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <Gamepad2 size={14} className="text-slate-400" />
-                                            <span className="text-sm font-medium text-slate-700">
-                                                {item.game_name}
-                                            </span>
+                {loading ? (
+                    <Card className="border-0 shadow-md h-full">
+                        <CardHeader className="pb-2">
+                            <Skeleton className="h-5 w-32" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {[1, 2, 3, 4].map((i) => (
+                                    <div key={i} className="flex justify-between">
+                                        <div className="flex gap-2">
+                                            <Skeleton className="h-4 w-4" />
+                                            <Skeleton className="h-4 w-24" />
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="secondary" className="text-xs">
-                                                {item.session}
-                                            </Badge>
-                                            <span className="text-xs text-slate-500">{item.close_time}</span>
-                                        </div>
+                                        <Skeleton className="h-4 w-16" />
                                     </div>
                                 ))}
                             </div>
-                        ) : (
-                            <div className="h-[240px] flex flex-col items-center justify-center text-slate-400">
-                                <Clock size={32} className="mb-2 opacity-50" />
-                                <p className="text-sm">No upcoming results</p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <Card className="border-0 shadow-md">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                                <Clock size={16} className="text-amber-500" />
+                                Upcoming Results
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {upcoming.length > 0 ? (
+                                <div className="space-y-3">
+                                    {upcoming.map((item, i) => (
+                                        <div
+                                            key={i}
+                                            className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Gamepad2 size={14} className="text-slate-400" />
+                                                <span className="text-sm font-medium text-slate-700">
+                                                    {item.game_name}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="secondary" className="text-xs">
+                                                    {item.session}
+                                                </Badge>
+                                                <span className="text-xs text-slate-500">{item.close_time}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="h-[240px] flex flex-col items-center justify-center text-slate-400">
+                                    <Clock size={32} className="mb-2 opacity-50" />
+                                    <p className="text-sm">No upcoming results</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
             </div>
 
             {/* Recent bets table */}
@@ -283,7 +309,18 @@ export default function AdminDashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {recentBets.length > 0 ? (
+                                {loading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <tr key={i} className="border-b border-slate-100">
+                                            <td className="py-3 px-3"><Skeleton className="h-4 w-16" /></td>
+                                            <td className="py-3 px-3"><Skeleton className="h-4 w-20" /></td>
+                                            <td className="py-3 px-3"><Skeleton className="h-4 w-24" /></td>
+                                            <td className="py-3 px-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                                            <td className="py-3 px-3"><div className="flex justify-end"><Skeleton className="h-4 w-12" /></div></td>
+                                            <td className="py-3 px-3"><div className="flex justify-center"><Skeleton className="h-5 w-16 rounded-full" /></div></td>
+                                        </tr>
+                                    ))
+                                ) : recentBets.length > 0 ? (
                                     recentBets.map((bet) => (
                                         <tr
                                             key={bet.bet_id}

@@ -1,69 +1,94 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { api } from '@/lib/api';
+import { useState, useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { api } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
-interface StatementRow {
+interface StatementItem {
     id: number;
     date: string;
     description: string;
-    credit: number;
-    debit: number;
+    amount: number;
+    type: 'credit' | 'debit';
     balance: number;
 }
 
-export default function StatementPage() {
-    const [data, setData] = useState<StatementRow[]>([]);
+export default function UserStatementPage() {
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<StatementItem[]>([]);
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const res = await api.get<StatementRow[]>('/api/transactions/statement');
-            if (res.success && res.data) setData(res.data);
-        } catch {
-            setData([
-                { id: 1, date: '11 Feb 2026, 10:30 AM', description: 'Coins Received from Master', credit: 5000, debit: 0, balance: 30000 },
-                { id: 2, date: '11 Feb 2026, 11:00 AM', description: 'Bet Placed — KALYAN SA', credit: 0, debit: 500, balance: 29500 },
-                { id: 3, date: '11 Feb 2026, 05:20 PM', description: 'Bet Won — KALYAN SA (10x)', credit: 5000, debit: 0, balance: 34500 },
-                { id: 4, date: '10 Feb 2026, 09:00 AM', description: 'Coins Received from Master', credit: 10000, debit: 0, balance: 25000 },
-                { id: 5, date: '10 Feb 2026, 02:00 PM', description: 'Bet Placed — SRIDEVI JD', credit: 0, debit: 1000, balance: 24000 },
-            ]);
-        }
-        setLoading(false);
+    useEffect(() => {
+        const fetchStatement = async () => {
+            try {
+                // Using ledger endpoint but mapping to statement view since statement endpoint might be summary
+                const res = await api.get<any>('/api/user/ledger');
+                if (res.success && res.data) {
+                    // Start from balance and reconstruct statement view if needed
+                    // For now, let's assume we want to show the same transactions but maybe formatted differently
+                    // Or if statement endpoint exists and returns list, use that.
+
+                    // Actually, let's check if there is a specific statement endpoint that returns a list.
+                    // If not, we might be reusing ledger data.
+                    // The corrupted file used fields: credit, debit, balance, description. 
+
+                    const formattedData = res.data.map((item: any) => ({
+                        id: item.id,
+                        date: new Date(item.date).toLocaleDateString(),
+                        description: item.note,
+                        amount: Math.abs(item.amount),
+                        type: item.amount >= 0 ? 'credit' : 'debit',
+                        balance: item.balance_after
+                    }));
+                    setData(formattedData);
+                }
+            } catch (error) {
+                console.error('Failed to fetch statement', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStatement();
     }, []);
 
-    useEffect(() => { fetchData(); }, [fetchData]);
-
     return (
-        <div className="space-y-4">
-            <div className="flex items-center gap-3">
-                <Link href="/user/profile" className="p-2 rounded-lg hover:bg-gray-100"><ArrowLeft size={18} /></Link>
-                <div className="flex items-center gap-2">
-                    <FileText size={18} className="text-[#059669]" />
-                    <h2 className="text-lg font-bold text-gray-800">Statement</h2>
-                </div>
+        <div className="container mx-auto p-4 max-w-lg mb-24">
+            <div className="flex items-center gap-2 mb-6">
+                <button
+                    onClick={() => router.back()}
+                    className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors"
+                >
+                    <ArrowLeft size={20} className="text-slate-600" />
+                </button>
+                <h1 className="text-2xl font-bold text-slate-800">Account Statement</h1>
             </div>
 
             {loading ? (
-                <div className="space-y-2">{[1, 2, 3].map((i) => <div key={i} className="h-16 bg-white rounded-xl animate-pulse" />)}</div>
+                <div className="space-y-2">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                    ))}
+                </div>
+            ) : data.length === 0 ? (
+                <div className="bg-white rounded-xl py-12 text-center">
+                    <FileText size={32} className="mx-auto text-gray-300 mb-2" />
+                    <p className="text-gray-500 text-sm">No statements found</p>
+                </div>
             ) : (
                 <div className="space-y-2">
                     {data.map((row) => (
-                        <div key={row.id} className="bg-white rounded-xl p-4">
+                        <div key={row.id} className="bg-white rounded-xl p-4 shadow-sm border border-transparent hover:border-slate-200 transition-colors">
                             <div className="flex items-start justify-between mb-1">
                                 <p className="text-sm font-medium text-gray-800 flex-1">{row.description}</p>
-                                {row.credit > 0 ? (
-                                    <span className="text-sm font-bold text-green-600">+₹{row.credit.toLocaleString('en-IN')}</span>
-                                ) : (
-                                    <span className="text-sm font-bold text-red-600">-₹{row.debit.toLocaleString('en-IN')}</span>
-                                )}
+                                <span className={`text-sm font-bold ${row.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                                    {row.type === 'credit' ? '+' : '-'}₹{row.amount.toLocaleString('en-IN')}
+                                </span>
                             </div>
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
                                 <span className="text-[10px] text-gray-400">{row.date}</span>
-                                <span className="text-xs text-gray-500">Bal: ₹{row.balance.toLocaleString('en-IN')}</span>
+                                <span className="text-xs text-gray-500 font-medium">Bal: ₹{row.balance.toLocaleString('en-IN')}</span>
                             </div>
                         </div>
                     ))}

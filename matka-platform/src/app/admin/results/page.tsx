@@ -193,7 +193,11 @@ export default function ResultsPage() {
                                 ) : (
                                     <tr>
                                         <td colSpan={6} className="py-12 text-center text-slate-400">
-                                            No results declared today
+                                            <div className="flex flex-col items-center justify-center py-6">
+                                                <Trophy size={40} className="text-slate-200 mb-3" />
+                                                <p className="text-base font-medium text-slate-600">No results declared today</p>
+                                                <p className="text-xs text-slate-400 mt-1">Declared results will appear here</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 )}

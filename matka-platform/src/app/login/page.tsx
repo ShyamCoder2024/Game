@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,11 +62,20 @@ export default function LoginPage() {
             <Card className="w-full max-w-md relative z-10 border-0 shadow-2xl bg-white/95 backdrop-blur-sm">
                 <CardHeader className="space-y-3 text-center pb-2">
                     {/* Logo */}
-                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/30 mb-2">
-                        <span className="text-2xl font-bold text-white">M</span>
+                    {/* Logo */}
+                    <div className="mx-auto mb-4">
+                        <div className="relative w-32 h-32 mx-auto">
+                            <Image
+                                src="/logo.png"
+                                alt="All India Logo"
+                                fill
+                                className="object-contain"
+                                priority
+                            />
+                        </div>
                     </div>
-                    <CardTitle className="text-2xl font-bold text-slate-800">
-                        Matka Platform
+                    <CardTitle className="text-3xl font-bold text-slate-800">
+                        All India
                     </CardTitle>
                     <CardDescription className="text-slate-500">
                         Enter your credentials to access the panel

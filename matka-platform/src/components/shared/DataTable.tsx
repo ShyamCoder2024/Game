@@ -208,7 +208,15 @@ export function DataTable<T>({
                                         colSpan={columns.length}
                                         className="py-12 text-center text-slate-400"
                                     >
-                                        No data to display
+                                        <div className="flex flex-col items-center justify-center py-6">
+                                            <div className="md:w-16 md:h-16 w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                                                <Search size={24} className="text-slate-400" />
+                                            </div>
+                                            <p className="text-base font-medium text-slate-600">No data found</p>
+                                            <p className="text-sm text-slate-400 max-w-xs mx-auto mt-1">
+                                                We couldn&apos;t find any records matching your criteria.
+                                            </p>
+                                        </div>
                                     </td>
                                 </tr>
                             )}

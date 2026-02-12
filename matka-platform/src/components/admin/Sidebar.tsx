@@ -5,6 +5,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
     LayoutDashboard,
     Users,
@@ -83,17 +84,22 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             {/* Sidebar */}
             <aside
                 className={cn(
-                    'fixed top-0 left-0 z-50 h-full w-64 bg-slate-800 text-white flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto',
+                    'fixed top-0 left-0 z-50 h-full w-64 bg-slate-800 text-white flex flex-col transition-transform duration-300 lg:translate-x-0',
                     open ? 'translate-x-0' : '-translate-x-full'
                 )}
             >
                 {/* Logo header */}
                 <div className="flex items-center justify-between h-16 px-5 border-b border-slate-700">
                     <Link href="/admin" className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                            <span className="text-lg font-bold text-white">M</span>
+                        <div className="relative w-10 h-10">
+                            <Image
+                                src="/logo.png"
+                                alt="Logo"
+                                fill
+                                className="object-contain"
+                            />
                         </div>
-                        <span className="text-lg font-bold tracking-tight">Matka Admin</span>
+                        <span className="text-lg font-bold tracking-tight">All India Admin</span>
                     </Link>
                     <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white">
                         <X size={20} />
@@ -176,7 +182,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                 {/* Footer */}
                 <div className="p-4 border-t border-slate-700">
                     <p className="text-xs text-slate-500 text-center">
-                        Matka Platform v1.0
+                        All India v1.0
                     </p>
                 </div>
             </aside>

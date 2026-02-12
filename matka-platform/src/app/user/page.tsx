@@ -7,6 +7,8 @@ import { GameResultCard } from '@/components/user/GameResultCard';
 import { useSocketStore } from '@/store/socketStore';
 import { useSocketEvent } from '@/hooks/useSocketEvent';
 import { MessageCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { motion } from 'framer-motion';
 
 interface GameResult {
     id: number;
@@ -58,63 +60,78 @@ export default function UserHomePage() {
 
     return (
         <div className="space-y-4">
-            {/* Announcement Marquee */}
-            <AnnouncementMarquee text={marqueeText} />
-
-            {/* Banner */}
-            <div className="relative h-32 rounded-2xl bg-gradient-to-r from-[#059669] to-[#047857] overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center text-white">
-                        <h2 className="text-xl font-bold mb-1">🎯 Play & Win Big</h2>
-                        <p className="text-sm text-white/80">Today&apos;s results are live!</p>
+            {loading ? (
+                <div className="space-y-4 animate-pulse">
+                    <Skeleton className="h-32 w-full rounded-2xl" />
+                    <div className="flex gap-2">
+                        <Skeleton className="flex-1 h-10 rounded-xl" />
+                        <Skeleton className="flex-1 h-10 rounded-xl" />
+                    </div>
+                    <div className="space-y-3">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                        ))}
                     </div>
                 </div>
-                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
-                <div className="absolute -top-4 -left-4 w-16 h-16 bg-white/10 rounded-full" />
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-2">
-                <button
-                    onClick={() => setTab('matka')}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === 'matka'
-                        ? 'bg-[#059669] text-white shadow-md'
-                        : 'bg-white text-gray-600 border border-gray-200'
-                        }`}
-                >
-                    MATKA
-                </button>
-                <button
-                    disabled
-                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
-                >
-                    LOTTERY MATKA
-                </button>
-            </div>
-
-            {/* Results Feed */}
-            {loading ? (
-                <div className="space-y-3">
-                    {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="h-20 bg-white rounded-xl animate-pulse" />
-                    ))}
-                </div>
             ) : (
-                <div className="space-y-3">
-                    {results.map((r) => (
-                        <GameResultCard
-                            key={r.id}
-                            gameName={r.game_name}
-                            gameColor={r.game_color}
-                            openPanna={r.open_panna}
-                            openSingle={r.open_single}
-                            closePanna={r.close_panna}
-                            closeSingle={r.close_single}
-                            jodi={r.jodi}
-                            time={r.time}
-                        />
-                    ))}
-                </div>
+                <>
+                    {/* Announcement Marquee */}
+                    <AnnouncementMarquee text={marqueeText} />
+
+                    {/* Banner */}
+                    <div className="relative h-32 rounded-2xl bg-gradient-to-r from-[#059669] to-[#047857] overflow-hidden shadow-lg">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-center text-white">
+                                <h2 className="text-xl font-bold mb-1">🎯 Play & Win Big</h2>
+                                <p className="text-sm text-white/80">Today&apos;s results are live!</p>
+                            </div>
+                        </div>
+                        <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
+                        <div className="absolute -top-4 -left-4 w-16 h-16 bg-white/10 rounded-full" />
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setTab('matka')}
+                            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === 'matka'
+                                ? 'bg-[#059669] text-white shadow-md'
+                                : 'bg-white text-gray-600 border border-gray-200'
+                                }`}
+                        >
+                            MATKA
+                        </button>
+                        <button
+                            disabled
+                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                        >
+                            LOTTERY MATKA
+                        </button>
+                    </div>
+
+                    {/* Results Feed */}
+                    <div className="space-y-3">
+                        {results.map((r, i) => (
+                            <motion.div
+                                key={r.id}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                            >
+                                <GameResultCard
+                                    gameName={r.game_name}
+                                    gameColor={r.game_color}
+                                    openPanna={r.open_panna}
+                                    openSingle={r.open_single}
+                                    closePanna={r.close_panna}
+                                    closeSingle={r.close_single}
+                                    jodi={r.jodi}
+                                    time={r.time}
+                                />
+                            </motion.div>
+                        ))}
+                    </div>
+                </>
             )}
 
             {/* WhatsApp FAB */}

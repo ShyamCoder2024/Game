@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { formatIndianCurrency } from '@/lib/utils';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface StatCardProps {
     title: string;
@@ -43,32 +44,42 @@ export function StatCard({
                 ? TrendingUp
                 : TrendingDown;
 
+
+    // ...
+
     return (
-        <Card className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300">
-            <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                        <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
-                        <p
-                            className={cn(
-                                'text-2xl lg:text-3xl font-bold tracking-tight',
-                                isCurrency && value < 0 ? 'text-red-600' : 'text-slate-800'
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -5 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+        >
+            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-5">
+                    <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                            <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
+                            <p
+                                className={cn(
+                                    'text-2xl lg:text-3xl font-bold tracking-tight',
+                                    isCurrency && value < 0 ? 'text-red-600' : 'text-slate-800'
+                                )}
+                            >
+                                {displayValue}
+                            </p>
+                            {trend !== undefined && (
+                                <div className={cn('flex items-center gap-1 mt-2 text-xs font-medium', trendColor)}>
+                                    <TrendIcon size={14} />
+                                    <span>{Math.abs(trend).toFixed(1)}% vs yesterday</span>
+                                </div>
                             )}
-                        >
-                            {displayValue}
-                        </p>
-                        {trend !== undefined && (
-                            <div className={cn('flex items-center gap-1 mt-2 text-xs font-medium', trendColor)}>
-                                <TrendIcon size={14} />
-                                <span>{Math.abs(trend).toFixed(1)}% vs yesterday</span>
-                            </div>
-                        )}
+                        </div>
+                        <div className={cn('p-3 rounded-xl', iconBg)}>
+                            <Icon size={22} className={iconColor} />
+                        </div>
                     </div>
-                    <div className={cn('p-3 rounded-xl', iconBg)}>
-                        <Icon size={22} className={iconColor} />
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </motion.div>
     );
 }

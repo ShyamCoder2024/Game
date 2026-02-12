@@ -2,6 +2,7 @@
 
 import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
+import Image from 'next/image';
 import { Wallet, Coins } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -31,8 +32,15 @@ export function UserHeader() {
         <header className="sticky top-0 z-30 bg-gradient-to-r from-[#059669] to-[#047857] text-white shadow-md">
             <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">
-                        {user?.name?.charAt(0) || 'U'}
+                    <div className="bg-white/20 rounded-lg p-1">
+                        <div className="relative w-9 h-9">
+                            <Image
+                                src="/logo.png"
+                                alt="Logo"
+                                fill
+                                className="object-contain"
+                            />
+                        </div>
                     </div>
                     <div>
                         <p className="text-sm font-semibold">{user?.name || 'Player'}</p>

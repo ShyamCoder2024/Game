@@ -1,107 +1,116 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Gamepad2, ChevronRight, AlertCircle, Coins, ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Target, ChevronRight, Coins, AlertCircle } from 'lucide-react';
-import { BET_TYPES } from '@/lib/constants';
 import { useSocketStore } from '@/store/socketStore';
-import { useSocketEvent } from '@/hooks/useSocketEvent';
+import { useToastStore } from '@/store/toastStore';
 
-interface ActiveGame {
+// Define Bet Types constant based on schema
+const BET_TYPES: Record<string, { name: string; shortName: string; defaultMultiplier: number }> = {
+    SINGLE_AKDA: { name: 'Single Digit', shortName: 'Single', defaultMultiplier: 9.5 },
+    JODI: { name: 'Jodi', shortName: 'Jodi', defaultMultiplier: 95 },
+    SINGLE_PATTI: { name: 'Single Patti', shortName: 'SP', defaultMultiplier: 140 },
+    DOUBLE_PATTI: { name: 'Double Patti', shortName: 'DP', defaultMultiplier: 280 },
+    TRIPLE_PATTI: { name: 'Triple Patti', shortName: 'TP', defaultMultiplier: 600 },
+};
+
+interface Game {
     id: number;
     name: string;
-    color: string;
     open_time: string;
     close_time: string;
     status: 'open' | 'closed';
+    color: string;
 }
 
-type BetTypeKey = keyof typeof BET_TYPES;
-
 export default function UserBetPage() {
-    const [step, setStep] = useState(1);
-    const [games, setGames] = useState<ActiveGame[]>([]);
+    // State
     const [loading, setLoading] = useState(true);
-    const [selectedGame, setSelectedGame] = useState<ActiveGame | null>(null);
-    const [selectedBetType, setSelectedBetType] = useState<BetTypeKey | null>(null);
+    const [games, setGames] = useState<Game[]>([]);
+    const [step, setStep] = useState(1);
+    const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+    const [selectedBetType, setSelectedBetType] = useState<string | null>(null);
     const [number, setNumber] = useState('');
     const [amount, setAmount] = useState('');
     const [placing, setPlacing] = useState(false);
     const [windowClosed, setWindowClosed] = useState(false);
+
+    // Store
     const liveBalance = useSocketStore((s) => s.liveBalance);
-    const balance = liveBalance !== null ? liveBalance : 0;
+    const balance = liveBalance || 0;
+    const { addToast } = useToastStore();
 
-    // Listen for window-status changes
-    const lastWindowStatus = useSocketStore((s) => s.lastWindowStatus);
-    useSocketEvent(lastWindowStatus, (ws) => {
-        if (selectedGame && ws.game_id === selectedGame.id && ws.status === 'closed') {
-            setWindowClosed(true);
-        }
-    });
-
-    const fetchGames = useCallback(async () => {
-        setLoading(true);
-        try {
-            const res = await api.get<ActiveGame[]>('/api/games', { status: 'active' });
-            if (res.success && res.data) setGames(res.data);
-        } catch {
-            setGames([
-                { id: 1, name: 'SRIDEVI', color: '#22C55E', open_time: '12:00 PM', close_time: '01:00 PM', status: 'open' },
-                { id: 2, name: 'KALYAN', color: '#F97316', open_time: '04:00 PM', close_time: '06:00 PM', status: 'open' },
-                { id: 3, name: 'MILAN DAY', color: '#EAB308', open_time: '01:30 PM', close_time: '03:30 PM', status: 'closed' },
-                { id: 4, name: 'RAJDHANI', color: '#A855F7', open_time: '09:00 PM', close_time: '11:00 PM', status: 'open' },
-                { id: 5, name: 'TIME BAZAR', color: '#EF4444', open_time: '01:00 PM', close_time: '02:00 PM', status: 'closed' },
-            ]);
-        }
-        setLoading(false);
+    // Fetch games
+    useEffect(() => {
+        const fetchGames = async () => {
+            try {
+                const res = await api.get<Game[]>('/api/games/active');
+                if (res.success && res.data) {
+                    setGames(res.data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch games', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchGames();
     }, []);
-
-    useEffect(() => { fetchGames(); }, [fetchGames]);
-
-    const potentialWin = selectedBetType && amount ? Number(amount) * BET_TYPES[selectedBetType].defaultMultiplier : 0;
 
     const handlePlaceBet = async () => {
         if (!selectedGame || !selectedBetType || !number || !amount) return;
+
         setPlacing(true);
         try {
-            await api.post('/api/bets/place', {
-                gameId: selectedGame.id,
-                betType: selectedBetType,
-                number,
-                amount: Number(amount),
+            const res = await api.post('/api/bets/place', {
+                game_id: selectedGame.id,
+                bet_type: selectedBetType,
+                number: number,
+                amount: Number(amount)
             });
-            setStep(1);
-            setSelectedGame(null);
-            setSelectedBetType(null);
-            setNumber('');
-            setAmount('');
-        } catch { /* handled */ }
-        setPlacing(false);
+
+            if (res.success) {
+                addToast('Bet placed successfully!', 'success');
+                setStep(1);
+                setNumber('');
+                setAmount('');
+                setSelectedBetType(null);
+                setSelectedGame(null);
+            } else {
+                addToast(res.error?.message || 'Failed to place bet', 'error');
+            }
+        } catch (error) {
+            addToast('Network error occurred', 'error');
+        } finally {
+            setPlacing(false);
+        }
     };
 
-    const betTypeEntries = Object.entries(BET_TYPES) as [BetTypeKey, typeof BET_TYPES[BetTypeKey]][];
+    const betTypeEntries = Object.entries(BET_TYPES);
+    const currentMultiplier = selectedBetType ? BET_TYPES[selectedBetType].defaultMultiplier : 0;
+    const potentialWin = Number(amount) * currentMultiplier;
 
     return (
-        <div className="space-y-4">
-            {/* Progress Steps */}
-            <div className="flex items-center justify-center gap-2 mb-2">
-                {[1, 2, 3].map((s) => (
-                    <div key={s} className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= s ? 'bg-[#059669] text-white' : 'bg-gray-200 text-gray-500'
-                            }`}>{s}</div>
-                        {s < 3 && <div className={`w-8 h-0.5 ${step > s ? 'bg-[#059669]' : 'bg-gray-200'}`} />}
-                    </div>
-                ))}
-            </div>
+        <div className="container mx-auto p-4 max-w-lg mb-24">
+            <h1 className="text-2xl font-bold text-slate-800 mb-6">Place Bet</h1>
 
             {/* Step 1: Select Game */}
             {step === 1 && (
                 <div className="space-y-3">
-                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <Target size={20} className="text-[#059669]" /> Select Game
-                    </h2>
                     {loading ? (
-                        <div className="space-y-2">{[1, 2, 3].map((i) => <div key={i} className="h-16 bg-white rounded-xl animate-pulse" />)}</div>
+                        <div className="space-y-2">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                                <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
+                            ))}
+                        </div>
+                    ) : games.length === 0 ? (
+                        <div className="bg-white rounded-xl py-12 text-center">
+                            <Gamepad2 size={40} className="mx-auto text-gray-300 mb-3" />
+                            <p className="text-gray-500 font-medium">No games available</p>
+                            <p className="text-xs text-gray-400 mt-1">Please check back later</p>
+                        </div>
                     ) : (
                         <div className="space-y-2">
                             {games.map((game) => (
@@ -135,10 +144,16 @@ export default function UserBetPage() {
             {/* Step 2: Select Bet Type */}
             {step === 2 && selectedGame && (
                 <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                        <button onClick={() => setStep(1)} className="text-sm text-[#059669] font-semibold">← Back</button>
-                        <h2 className="text-lg font-bold text-gray-800">{selectedGame.name} — Bet Type</h2>
+                    <div className="flex items-center gap-2 mb-2">
+                        <button onClick={() => setStep(1)} className="text-sm text-[#059669] font-semibold flex items-center">
+                            <ArrowLeft size={16} className="mr-1" /> Back
+                        </button>
                     </div>
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-gray-800">{selectedGame.name}</h2>
+                        <span className="text-xs text-slate-500">Select Bet Type</span>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
                         {betTypeEntries.map(([key, bt]) => (
                             <button
@@ -158,10 +173,12 @@ export default function UserBetPage() {
             {/* Step 3: Enter Number & Amount */}
             {step === 3 && selectedGame && selectedBetType && (
                 <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                        <button onClick={() => setStep(2)} className="text-sm text-[#059669] font-semibold">← Back</button>
-                        <h2 className="text-lg font-bold text-gray-800">{BET_TYPES[selectedBetType].name}</h2>
+                    <div className="flex items-center gap-2 mb-2">
+                        <button onClick={() => setStep(2)} className="text-sm text-[#059669] font-semibold flex items-center">
+                            <ArrowLeft size={16} className="mr-1" /> Back
+                        </button>
                     </div>
+                    <h2 className="text-lg font-bold text-gray-800">{BET_TYPES[selectedBetType].name}</h2>
 
                     <div className="bg-white rounded-xl p-4 space-y-4">
                         <div>
@@ -196,7 +213,7 @@ export default function UserBetPage() {
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600">Multiplier</span>
-                                <span className="font-bold text-[#059669]">{BET_TYPES[selectedBetType].defaultMultiplier}x</span>
+                                <span className="font-bold text-[#059669]">{currentMultiplier}x</span>
                             </div>
                             <div className="border-t border-emerald-200 my-1" />
                             <div className="flex justify-between text-sm">

@@ -15,8 +15,11 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Matka Platform",
+  title: "All India",
   description: "Online Matka betting platform with real-time results",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
