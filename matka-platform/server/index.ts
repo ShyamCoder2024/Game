@@ -7,6 +7,8 @@ import helmet from '@fastify/helmet';
 import { prisma } from './lib/prisma';
 import { AppError } from './utils/errors';
 import { setupRoutes } from './routes';
+import { setupSocket } from './socket';
+import { setupCron } from './cron';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
@@ -140,6 +142,14 @@ async function start() {
         await app.listen({ port: PORT, host: '0.0.0.0' });
         app.log.info(`🚀 Server running on http://localhost:${PORT}`);
         app.log.info(`📋 Health check: http://localhost:${PORT}/api/health`);
+
+        // Initialize Socket.io on the raw HTTP server
+        await setupSocket(app.server);
+        app.log.info('🔌 WebSocket server initialized');
+
+        // Start cron jobs
+        setupCron();
+        app.log.info('⏰ Cron jobs registered');
     } catch (err) {
         app.log.error(err);
         process.exit(1);
@@ -149,6 +159,11 @@ async function start() {
 // Graceful shutdown
 const shutdown = async () => {
     app.log.info('🛑 Shutting down server...');
+    const { getIO } = await import('./socket');
+    const io = getIO();
+    if (io) {
+        io.close();
+    }
     await prisma.$disconnect();
     await app.close();
     process.exit(0);

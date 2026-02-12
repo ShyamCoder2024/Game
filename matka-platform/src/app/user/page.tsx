@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { AnnouncementMarquee } from '@/components/user/AnnouncementMarquee';
 import { GameResultCard } from '@/components/user/GameResultCard';
+import { useSocketStore } from '@/store/socketStore';
+import { useSocketEvent } from '@/hooks/useSocketEvent';
 import { MessageCircle } from 'lucide-react';
 
 interface GameResult {
@@ -43,10 +45,21 @@ export default function UserHomePage() {
 
     useEffect(() => { fetchResults(); }, [fetchResults]);
 
+    // Auto-refresh when new result is declared via WebSocket
+    const lastResult = useSocketStore((s) => s.lastResult);
+    useSocketEvent(lastResult, () => { fetchResults(); });
+
+    // Live announcement updates
+    const lastAnnouncement = useSocketStore((s) => s.lastAnnouncement);
+    const [marqueeText, setMarqueeText] = useState('🎉 Welcome to Matka Platform! All games are live. Results updated in real-time. Good luck! 🍀');
+    useSocketEvent(lastAnnouncement, (ann) => {
+        setMarqueeText(`📢 ${ann.title}: ${ann.message}`);
+    });
+
     return (
         <div className="space-y-4">
             {/* Announcement Marquee */}
-            <AnnouncementMarquee text="🎉 Welcome to Matka Platform! All games are live. Results updated in real-time. Good luck! 🍀" />
+            <AnnouncementMarquee text={marqueeText} />
 
             {/* Banner */}
             <div className="relative h-32 rounded-2xl bg-gradient-to-r from-[#059669] to-[#047857] overflow-hidden">
@@ -65,8 +78,8 @@ export default function UserHomePage() {
                 <button
                     onClick={() => setTab('matka')}
                     className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === 'matka'
-                            ? 'bg-[#059669] text-white shadow-md'
-                            : 'bg-white text-gray-600 border border-gray-200'
+                        ? 'bg-[#059669] text-white shadow-md'
+                        : 'bg-white text-gray-600 border border-gray-200'
                         }`}
                 >
                     MATKA

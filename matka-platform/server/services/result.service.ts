@@ -6,6 +6,8 @@ import { AppError } from '../utils/errors';
 import { calculateSingle, calculateJodi, isValidPanna } from '../utils/calculation';
 import { SettlementService } from './settlement.service';
 import type { DeclareResultInput } from '../validators/result.schema';
+import { emitToUser, emitToGame, emitToAdmins, emitToAll } from '../socket/emitters';
+import { WS_EVENTS } from '../socket/events';
 
 export class ResultService {
 
@@ -101,6 +103,82 @@ export class ResultService {
             },
             declaredBy
         );
+
+        // ==========================================
+        // REAL-TIME WEBSOCKET EVENTS
+        // ==========================================
+
+        // Broadcast result to everyone watching this game
+        emitToGame(game_id, WS_EVENTS.RESULT_DECLARED, {
+            game_id,
+            game_name: game.name,
+            session,
+            panna,
+            single,
+            jodi: resultData.jodi || null,
+            date: today,
+        });
+
+        // Also broadcast globally for dashboard
+        emitToAll(WS_EVENTS.RESULT_DECLARED, {
+            game_id,
+            game_name: game.name,
+            session,
+            panna,
+            single,
+            jodi: resultData.jodi || null,
+        });
+
+        // Notify admins of settlement stats
+        emitToAdmins(WS_EVENTS.SETTLEMENT_COMPLETE, {
+            game_name: game.name,
+            session,
+            total_bets: settlement.total_bets,
+            winners_count: settlement.winners_count,
+            losers_count: settlement.losers_count,
+            total_payout: settlement.total_payout,
+            net_pnl: settlement.net_pnl,
+        });
+
+        // Send individual bet-won/bet-lost and wallet-update to each affected user
+        if (settlement.total_bets > 0) {
+            try {
+                const entries = await prisma.settlementEntry.findMany({
+                    where: { settlement_id: settlement.id },
+                    include: {
+                        user: { select: { id: true, wallet_balance: true } },
+                        bet: { select: { bet_type: true, bet_number: true, bet_amount: true, payout_multiplier: true } },
+                    },
+                });
+
+                for (const entry of entries) {
+                    if (entry.outcome === 'won') {
+                        emitToUser(entry.user_id, WS_EVENTS.BET_WON, {
+                            game_name: game.name,
+                            bet_type: entry.bet.bet_type,
+                            bet_number: entry.bet.bet_number,
+                            bet_amount: entry.bet_amount,
+                            win_amount: entry.win_amount,
+                        });
+                    } else {
+                        emitToUser(entry.user_id, WS_EVENTS.BET_LOST, {
+                            game_name: game.name,
+                            bet_type: entry.bet.bet_type,
+                            bet_number: entry.bet.bet_number,
+                            bet_amount: entry.bet_amount,
+                        });
+                    }
+
+                    // Wallet update with current balance
+                    emitToUser(entry.user_id, WS_EVENTS.WALLET_UPDATE, {
+                        balance: entry.user.wallet_balance,
+                    });
+                }
+            } catch (err) {
+                // Don't fail the result declaration if WS notifications fail
+                console.error('[WS] Failed to send settlement notifications:', err);
+            }
+        }
 
         return {
             result,

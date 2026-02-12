@@ -9,6 +9,8 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
 import { formatIndianCurrency } from '@/lib/utils';
+import { useSocketStore } from '@/store/socketStore';
+import { useSocketEvent } from '@/hooks/useSocketEvent';
 import { RotateCcw, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface Settlement {
@@ -41,6 +43,10 @@ export default function SettlementPage() {
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
+
+    // Auto-refresh when settlement completes via WebSocket
+    const lastSettlement = useSocketStore((s) => s.lastSettlement);
+    useSocketEvent(lastSettlement, () => { fetchData(page); });
 
     const handleRollback = async () => {
         if (!rollbackTarget) return;

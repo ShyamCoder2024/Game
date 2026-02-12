@@ -11,6 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/lib/api';
 import { formatIndianCurrency } from '@/lib/utils';
+import { useSocket } from '@/hooks/useSocket';
+import { useSocketStore } from '@/store/socketStore';
+import { useSocketEvent } from '@/hooks/useSocketEvent';
 import {
     DollarSign,
     BarChart3,
@@ -55,6 +58,21 @@ export default function AdminDashboard() {
     const [recentBets, setRecentBets] = useState<RecentBet[]>([]);
     const [upcoming, setUpcoming] = useState<UpcomingResult[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // WebSocket — real-time updates
+    const { isConnected } = useSocket();
+    const lastDashboardStats = useSocketStore((s) => s.lastDashboardStats);
+    const lastBetStream = useSocketStore((s) => s.lastBetStream);
+
+    // Live stat cards update
+    useSocketEvent(lastDashboardStats, (data) => {
+        setStats((prev) => prev ? { ...prev, ...data } : { ...data, totalBetsTrend: 0, volumeTrend: 0, pnlTrend: 0, usersTrend: 0 });
+    });
+
+    // Live bet stream — prepend new bet
+    useSocketEvent(lastBetStream, (bet) => {
+        setRecentBets((prev) => [bet, ...prev].slice(0, 20));
+    });
 
     useEffect(() => {
         fetchDashboard();
@@ -116,12 +134,20 @@ export default function AdminDashboard() {
 
     return (
         <div className="space-y-6">
-            {/* Page title */}
-            <div>
-                <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-                <p className="text-sm text-slate-500 mt-1">
-                    Overview of today&apos;s activity and performance
-                </p>
+            {/* Page title + Live indicator */}
+            <div className="flex items-center gap-3">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+                    <p className="text-sm text-slate-500 mt-1">
+                        Overview of today&apos;s activity and performance
+                    </p>
+                </div>
+                {isConnected && (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        Live
+                    </span>
+                )}
             </div>
 
             {/* Stat cards - 4 columns */}

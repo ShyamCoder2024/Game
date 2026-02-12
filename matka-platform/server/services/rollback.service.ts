@@ -7,6 +7,8 @@ import { prisma } from '../lib/prisma';
 import { AppError } from '../utils/errors';
 import { generateTxnId } from '../utils/idGenerator';
 import { PnLService } from './pnl.service';
+import { emitToUser, emitToAll, emitToAdmins } from '../socket/emitters';
+import { WS_EVENTS } from '../socket/events';
 
 // Prisma transaction client type
 type TxClient = Prisma.TransactionClient;
@@ -46,7 +48,16 @@ export class RollbackService {
             throw new AppError('VALIDATION_ERROR', 'This result has already been rolled back');
         }
 
-        return await prisma.$transaction(async (tx: TxClient) => {
+        // Store bets reference for post-transaction WS emits
+        const settledBetsForEmit = await prisma.bet.findMany({
+            where: {
+                result_id: resultId,
+                status: { in: ['won', 'lost'] },
+            },
+            select: { user_id: true },
+        });
+
+        const rollbackResult = await prisma.$transaction(async (tx: TxClient) => {
 
             // 1. Find all settled bets for this result
             const settledBets = await tx.bet.findMany({
@@ -184,6 +195,45 @@ export class RollbackService {
         }, {
             timeout: 30000,
         });
+
+        // ==========================================
+        // REAL-TIME WEBSOCKET EVENTS (after transaction commits)
+        // ==========================================
+
+        // Broadcast rollback to all clients
+        emitToAll(WS_EVENTS.ROLLBACK, {
+            result_id: resultId,
+            game_name: result.game.name,
+            session: result.session,
+            date: result.date,
+        });
+
+        // Notify admins
+        emitToAdmins(WS_EVENTS.ROLLBACK, {
+            result_id: resultId,
+            game_name: result.game.name,
+            session: result.session,
+            bets_reversed: rollbackResult.bets_reversed,
+        });
+
+        // Send wallet updates to all affected users
+        try {
+            const affectedUserIds = Array.from(new Set(settledBetsForEmit.map(b => b.user_id)));
+            const updatedUsers = await prisma.user.findMany({
+                where: { id: { in: affectedUserIds } },
+                select: { id: true, wallet_balance: true },
+            });
+
+            for (const user of updatedUsers) {
+                emitToUser(user.id, WS_EVENTS.WALLET_UPDATE, {
+                    balance: user.wallet_balance,
+                });
+            }
+        } catch (err) {
+            console.error('[WS] Failed to send rollback wallet updates:', err);
+        }
+
+        return rollbackResult;
     }
 
     /**

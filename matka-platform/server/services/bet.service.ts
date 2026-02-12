@@ -9,6 +9,8 @@ import { generateBetId, generateTxnId } from '../utils/idGenerator';
 import { isValidBetNumber } from '../utils/calculation';
 import { GameService } from './game.service';
 import type { PlaceBetInput, BetListQuery } from '../validators/bet.schema';
+import { emitToUser, emitBetStream } from '../socket/emitters';
+import { WS_EVENTS } from '../socket/events';
 
 // Prisma interactive transaction client type
 type TxClient = Prisma.TransactionClient;
@@ -140,6 +142,24 @@ export class BetService {
                 },
                 balance_after: balanceAfter,
             };
+        });
+
+        // Real-time: notify user of balance change
+        emitToUser(userId, WS_EVENTS.WALLET_UPDATE, {
+            balance: result.balance_after,
+        });
+
+        // Real-time: stream bet to admin dashboard
+        emitBetStream({
+            bet_id: result.bet.bet_id,
+            user_id: userIdStr,
+            game_name: result.bet.game_name,
+            bet_type: result.bet.bet_type,
+            bet_number: result.bet.bet_number,
+            session: result.bet.session,
+            amount: result.bet.amount,
+            potential_win: result.bet.potential_win,
+            placed_at: new Date().toISOString(),
         });
 
         return result;

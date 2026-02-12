@@ -95,6 +95,11 @@ export const ERROR_CODES: Record<string, ErrorDefinition> = {
     SETTLEMENT_ROLLBACK_FAILED: { message: 'Settlement rollback failed', statusCode: 500 },
     SETTLEMENT_ALREADY_ROLLED_BACK: { message: 'This settlement has already been rolled back', statusCode: 400 },
 
+    // Credit/Loan Errors
+    CREDIT_LOAN_NOT_FOUND: { message: 'Loan not found', statusCode: 404 },
+    CREDIT_ALREADY_REPAID: { message: 'This loan is already fully repaid', statusCode: 400 },
+    CREDIT_EXCEEDS_OUTSTANDING: { message: 'Repayment amount exceeds outstanding balance', statusCode: 400 },
+
     // Validation Errors (8xxx)
     VALIDATION_FAILED: { message: 'Validation failed', statusCode: 400 },
     INVALID_INPUT: { message: 'Invalid input provided', statusCode: 400 },

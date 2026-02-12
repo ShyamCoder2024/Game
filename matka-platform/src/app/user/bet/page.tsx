@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { Target, ChevronRight, Coins, AlertCircle } from 'lucide-react';
 import { BET_TYPES } from '@/lib/constants';
+import { useSocketStore } from '@/store/socketStore';
+import { useSocketEvent } from '@/hooks/useSocketEvent';
 
 interface ActiveGame {
     id: number;
@@ -25,7 +27,17 @@ export default function UserBetPage() {
     const [number, setNumber] = useState('');
     const [amount, setAmount] = useState('');
     const [placing, setPlacing] = useState(false);
-    const balance = 25000; // From state in real app
+    const [windowClosed, setWindowClosed] = useState(false);
+    const liveBalance = useSocketStore((s) => s.liveBalance);
+    const balance = liveBalance !== null ? liveBalance : 0;
+
+    // Listen for window-status changes
+    const lastWindowStatus = useSocketStore((s) => s.lastWindowStatus);
+    useSocketEvent(lastWindowStatus, (ws) => {
+        if (selectedGame && ws.game_id === selectedGame.id && ws.status === 'closed') {
+            setWindowClosed(true);
+        }
+    });
 
     const fetchGames = useCallback(async () => {
         setLoading(true);
@@ -96,10 +108,10 @@ export default function UserBetPage() {
                                 <button
                                     key={game.id}
                                     disabled={game.status === 'closed'}
-                                    onClick={() => { setSelectedGame(game); setStep(2); }}
+                                    onClick={() => { setSelectedGame(game); setStep(2); setWindowClosed(false); }}
                                     className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-all ${game.status === 'closed'
-                                            ? 'bg-gray-100 opacity-60 cursor-not-allowed'
-                                            : 'bg-white hover:shadow-md hover:border-[#059669] border border-transparent'
+                                        ? 'bg-gray-100 opacity-60 cursor-not-allowed'
+                                        : 'bg-white hover:shadow-md hover:border-[#059669] border border-transparent'
                                         }`}
                                 >
                                     <div className="w-2 h-10 rounded-full" style={{ backgroundColor: game.color }} />
@@ -209,11 +221,11 @@ export default function UserBetPage() {
 
                     <button
                         onClick={handlePlaceBet}
-                        disabled={!number || !amount || Number(amount) > balance || placing}
+                        disabled={!number || !amount || Number(amount) > balance || placing || windowClosed}
                         className="w-full py-4 rounded-xl bg-[#059669] text-white font-bold text-lg hover:bg-[#047857] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                         <Coins size={20} />
-                        {placing ? 'Placing...' : 'Place Bet'}
+                        {windowClosed ? '🔒 Betting Closed' : placing ? 'Placing...' : 'Place Bet'}
                     </button>
                 </div>
             )}
