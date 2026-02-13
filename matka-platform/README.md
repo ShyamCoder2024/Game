@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Matka Betting Platform
+
+A comprehensive betting platform built with Next.js, PostgreSQL, Prisma, and Redis.
+
+## Prerequisites
+
+Before running this project, ensure you have the following installed on your machine:
+
+1.  **Node.js** (v18 or higher)
+2.  **PostgreSQL** (v15 or higher)
+3.  **Redis** (optional, but recommended for full functionality)
 
 ## Getting Started
 
-First, run the development server:
+Follow these steps to set up and run the project locally.
+
+### 1. Clone the Repository
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd matka-platform
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install Dependencies
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Environment Setup
 
-## Learn More
+Create a `.env` file in the root directory. You can copy the structure from `.env.example` if it exists, or use the following template (ask the project owner for the `JWT_SECRET` and other sensitive keys):
 
-To learn more about Next.js, take a look at the following resources:
+```env
+# Database
+DATABASE_URL="postgresql://matka_user:matka_secret_2026@localhost:5432/matka_db"
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Redis
+REDIS_URL="redis://localhost:6379"
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# JWT Secret (Change this!)
+JWT_SECRET="your-secret-key-here"
 
-## Deploy on Vercel
+# Admin Credentials (Initial Setup)
+ADMIN_ID="ADMIN001"
+ADMIN_PASSWORD="admin@matka2026"
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Server Config
+PORT=3001
+NEXT_PUBLIC_API_URL="http://localhost:3000"
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> **Important:** The `.env` file contains sensitive passwords and is NOT shared via Git. You must create this file manually.
+
+### 4. Database Setup
+
+Ensure your PostgreSQL server is running. Then, run the following commands to create the database and tables:
+
+```bash
+# Run migrations (creates tables)
+npx prisma migrate dev
+
+# (Optional) Seed the database with initial data
+npx prisma db seed
+```
+
+### 5. Run the Application
+
+You need to run both the Next.js frontend and the custom backend server.
+
+```bash
+# Terminal 1: Run the backend server/cron jobs
+npm run dev:server
+
+# Terminal 2: Run the frontend
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Project Structure
+
+-   `src/app`: Next.js App Router pages
+-   `src/components`: Reusable UI components
+-   `src/lib`: Utility functions and API clients
+-   `prisma`: Database schema and migrations
+-   `server`: Custom backend server for cron jobs and socket.io
+
+## Common Issues
+
+-   **Database Connection Error:** Check if PostgreSQL is running and the `DATABASE_URL` in `.env` is correct.
+-   **"Something went wrong":** Check the terminal output for server-side errors.
