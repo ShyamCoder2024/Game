@@ -2,6 +2,7 @@
 
 // src/components/admin/Sidebar.tsx
 // Dark sidebar with nav items, active state, collapsible on mobile
+// Optimized: Smooth accordion animations, performance improvements
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SidebarProps {
     open: boolean;
@@ -69,6 +71,13 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     const isActive = (href: string) => {
         if (href === '/admin') return pathname === '/admin';
         return pathname.startsWith(href);
+    };
+
+    // Helper to close on mobile only
+    const handleLinkClick = () => {
+        if (window.innerWidth < 1024) {
+            onClose();
+        }
     };
 
     return (
@@ -131,31 +140,42 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                                         <ChevronDown
                                             size={16}
                                             className={cn(
-                                                'transition-transform duration-200',
+                                                'transition-transform duration-300', // Slower transition for arrow
                                                 isExpanded && 'rotate-180'
                                             )}
                                         />
                                     </button>
-                                    {isExpanded && (
-                                        <div className="mt-1 ml-4 pl-3 border-l border-slate-700 space-y-1">
-                                            {item.children.map((child) => (
-                                                <Link
-                                                    key={child.href}
-                                                    href={child.href}
-                                                    onClick={onClose}
-                                                    className={cn(
-                                                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                                                        isActive(child.href)
-                                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                                                            : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                                                    )}
-                                                >
-                                                    <child.icon size={16} />
-                                                    <span>{child.label}</span>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    )}
+
+                                    <AnimatePresence>
+                                        {isExpanded && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.3, ease: 'easeInOut' }} // Smooth glide
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="mt-1 ml-4 pl-3 border-l border-slate-700 space-y-1">
+                                                    {item.children.map((child) => (
+                                                        <Link
+                                                            key={child.href}
+                                                            href={child.href}
+                                                            onClick={handleLinkClick}
+                                                            className={cn(
+                                                                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                                                                isActive(child.href)
+                                                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                                                                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                                                            )}
+                                                        >
+                                                            <child.icon size={16} />
+                                                            <span>{child.label}</span>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             );
                         }
@@ -164,7 +184,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                             <Link
                                 key={item.href}
                                 href={item.href!}
-                                onClick={onClose}
+                                onClick={handleLinkClick}
                                 className={cn(
                                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                                     isActive(item.href!)

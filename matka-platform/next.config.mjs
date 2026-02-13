@@ -1,4 +1,13 @@
 const nextConfig = {
+    async redirects() {
+        return [
+            {
+                source: '/super-master/:path*',
+                destination: '/supermaster/:path*',
+                permanent: true,
+            },
+        ];
+    },
     async rewrites() {
         return [
             {

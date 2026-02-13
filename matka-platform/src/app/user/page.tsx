@@ -104,37 +104,51 @@ export default function UserHomePage() {
                                 MATKA
                             </button>
                             <button
-                                disabled
-                                className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                                onClick={() => setTab('lottery')}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === 'lottery'
+                                    ? 'bg-[#003366] text-white shadow-md'
+                                    : 'bg-white text-gray-600 border border-gray-200'
+                                    }`}
                             >
                                 LOTTERY MATKA
                             </button>
                         </div>
 
                         {/* Results Feed */}
-                        <div className="space-y-3">
-                            {results.map((r, i) => (
-                                <motion.div
-                                    key={r.id}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.1 }}
-                                >
-                                    <Link href={`/user/bet?gameId=${r.id}`}>
-                                        <GameResultCard
-                                            gameName={r.game_name}
-                                            gameColor={r.game_color}
-                                            openPanna={r.open_panna}
-                                            openSingle={r.open_single}
-                                            closePanna={r.close_panna}
-                                            closeSingle={r.close_single}
-                                            jodi={r.jodi}
-                                            time={r.time}
-                                        />
-                                    </Link>
-                                </motion.div>
-                            ))}
-                        </div>
+                        {/* Results Feed */}
+                        {tab === 'matka' ? (
+                            <div className="space-y-3">
+                                {results.map((r, i) => (
+                                    <motion.div
+                                        key={r.id}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: i * 0.1 }}
+                                    >
+                                        <Link href={`/user/bet?gameId=${r.id}`}>
+                                            <GameResultCard
+                                                gameName={r.game_name}
+                                                gameColor={r.game_color}
+                                                openPanna={r.open_panna}
+                                                openSingle={r.open_single}
+                                                closePanna={r.close_panna}
+                                                closeSingle={r.close_single}
+                                                jodi={r.jodi}
+                                                time={r.time}
+                                            />
+                                        </Link>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-sm border border-gray-100 min-h-[300px]">
+                                <div className="weather-icon mb-4 text-4xl">🎲</div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">Coming Soon</h3>
+                                <p className="text-gray-500 text-center text-sm">
+                                    Lottery Matka games are currently under development. Stay tuned for exciting new ways to win!
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </>
             )}
