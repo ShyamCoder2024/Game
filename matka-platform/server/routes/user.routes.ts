@@ -97,4 +97,28 @@ export async function userRoutes(app: FastifyInstance) {
             });
         },
     });
+
+    // GET /api/user/announcements — Get active announcements for users
+    app.get('/announcements', {
+        handler: async (request: FastifyRequest, reply) => {
+            const announcements = await prisma.announcement.findMany({
+                where: {
+                    is_active: true,
+                    AND: [
+                        { OR: [{ starts_at: null }, { starts_at: { lte: new Date() } }] },
+                        { OR: [{ ends_at: null }, { ends_at: { gte: new Date() } }] },
+                    ],
+                },
+                orderBy: { display_order: 'asc' },
+                select: {
+                    id: true,
+                    title: true,
+                    message: true,
+                    created_at: true,
+                }
+            });
+
+            return sendSuccess(reply, { data: announcements });
+        },
+    });
 }

@@ -2,14 +2,17 @@
 
 import { useSocketStore } from '@/store/socketStore';
 import Image from 'next/image';
-import { Coins } from 'lucide-react';
+import { Coins, Bell } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { api } from '@/lib/api';
 
 export function UserHeader() {
     const liveBalance = useSocketStore((s) => s.liveBalance);
     // Flash animation when balance changes
     const [flash, setFlash] = useState(false);
     const prevBalance = useRef(liveBalance);
+    const [hasNotifications, setHasNotifications] = useState(false);
 
     useEffect(() => {
         if (liveBalance !== null && prevBalance.current !== null && liveBalance !== prevBalance.current) {
@@ -20,6 +23,20 @@ export function UserHeader() {
         }
         prevBalance.current = liveBalance;
     }, [liveBalance]);
+
+    useEffect(() => {
+        const checkNotifications = async () => {
+            try {
+                const res = await api.get<any[]>('/api/user/announcements');
+                if (res.success && res.data && res.data.length > 0) {
+                    setHasNotifications(true);
+                }
+            } catch (error) {
+                console.error('Failed to fetch notifications', error);
+            }
+        };
+        checkNotifications();
+    }, []);
 
     const displayBalance = liveBalance !== null ? liveBalance : 0;
 
@@ -46,7 +63,14 @@ export function UserHeader() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                    <Link href="/user/notifications" className="relative p-2 rounded-full hover:bg-white/10 transition-colors">
+                        <Bell size={24} className="text-[#FFF8E7]" />
+                        {hasNotifications && (
+                            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#003366]"></span>
+                        )}
+                    </Link>
+
                     <div
                         className={`flex items-center gap-1.5 bg-black/20 border border-white/10 rounded-full px-3 py-1.5 transition-all duration-300 ${flash ? 'ring-2 ring-yellow-400/50 scale-105 bg-black/30' : ''
                             }`}
