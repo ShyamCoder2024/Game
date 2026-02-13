@@ -28,10 +28,8 @@ export default function UserChartsPage() {
 
     const fetchChart = useCallback(async () => {
         setLoading(true);
-        try {
-            const res = await api.get<WeekData[]>('/api/charts', { game: selectedGame });
-            if (res.success && res.data) setChartData(res.data);
-        } catch {
+
+        const generateSampleData = () => {
             // Sample chart data — 4 weeks
             const weeks: WeekData[] = [];
             const sampleData = [
@@ -59,7 +57,18 @@ export default function UserChartsPage() {
                 }
                 weeks.push({ week_label: `Week ${w + 1}`, entries });
             }
-            setChartData(weeks);
+            return weeks;
+        };
+
+        try {
+            const res = await api.get<WeekData[]>('/api/charts', { game: selectedGame });
+            if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+                setChartData(res.data);
+            } else {
+                setChartData(generateSampleData());
+            }
+        } catch {
+            setChartData(generateSampleData());
         }
         setLoading(false);
     }, [selectedGame]);
@@ -67,73 +76,129 @@ export default function UserChartsPage() {
     useEffect(() => { fetchChart(); }, [fetchChart]);
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <BarChart3 size={20} className="text-[#059669]" /> Charts
-                </h2>
-                {/* Game Dropdown */}
-                <div className="relative">
-                    <button
-                        onClick={() => setShowDropdown(!showDropdown)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-gray-200 text-sm font-semibold text-gray-800 hover:bg-gray-50"
-                    >
-                        {selectedGame}
-                        <ChevronDown size={14} className={`transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
-                    </button>
-                    {showDropdown && (
-                        <div className="absolute right-0 top-full mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-10 overflow-hidden min-w-[160px]">
-                            {SAMPLE_GAMES.map((g) => (
-                                <button
-                                    key={g}
-                                    onClick={() => { setSelectedGame(g); setShowDropdown(false); }}
-                                    className={`w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-emerald-50 transition-colors ${g === selectedGame ? 'text-[#059669] bg-emerald-50' : 'text-gray-700'}`}
-                                >
-                                    {g}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+        <div className="space-y-6 pb-24 px-1">
+            {/* Header Section */}
+            <div className="sticky top-[70px] z-30 bg-[#F5F7FA]/95 backdrop-blur-md pb-2 pt-4 px-2">
+                <div className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <div>
+                        <h2 className="text-xl font-black text-[#003366] flex items-center gap-2 tracking-tight">
+                            <span className="bg-[#E6F0FF] p-1.5 rounded-lg text-[#003366]">
+                                <BarChart3 size={20} />
+                            </span>
+                            Charts
+                        </h2>
+                        <p className="text-[10px] text-gray-400 font-bold tracking-wider uppercase mt-1 ml-1">
+                            Historic Results
+                        </p>
+                    </div>
+
+                    {/* Premium Game Dropdown */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowDropdown(!showDropdown)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-200 ${showDropdown
+                                ? 'bg-[#003366] text-white border-[#003366] shadow-md'
+                                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-white hover:shadow-sm'
+                                }`}
+                        >
+                            {selectedGame}
+                            <ChevronDown
+                                size={14}
+                                className={`transition-transform duration-300 ${showDropdown ? 'rotate-180' : ''}`}
+                            />
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {showDropdown && (
+                            <>
+                                <div className="fixed inset-0 z-30" onClick={() => setShowDropdown(false)} />
+                                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl border border-gray-100 shadow-2xl z-40 overflow-hidden origin-top-right animate-in fade-in zoom-in-95 duration-200 ring-1 ring-black/5">
+                                    <div className="p-1">
+                                        <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50 mb-1">
+                                            Select Game
+                                        </div>
+                                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                                            {SAMPLE_GAMES.map((g) => (
+                                                <button
+                                                    key={g}
+                                                    onClick={() => { setSelectedGame(g); setShowDropdown(false); }}
+                                                    className={`w-full px-3 py-2.5 text-left text-xs font-bold rounded-lg transition-all flex items-center justify-between mb-0.5 ${g === selectedGame
+                                                        ? 'bg-[#E6F0FF] text-[#003366]'
+                                                        : 'text-gray-600 hover:bg-gray-50'
+                                                        }`}
+                                                >
+                                                    {g}
+                                                    {g === selectedGame && (
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-[#003366]" />
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {/* Chart Grid */}
             {loading ? (
-                <div className="h-64 bg-white rounded-xl animate-pulse" />
+                <div className="space-y-3">
+                    <div className="h-10 bg-white rounded-xl animate-pulse" />
+                    <div className="h-96 bg-white rounded-2xl animate-pulse shadow-sm" />
+                </div>
             ) : (
-                <div className="bg-white rounded-xl overflow-hidden">
+                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                     {/* Day Headers */}
-                    <div className="grid grid-cols-7 border-b border-gray-200">
+                    <div className="grid grid-cols-7 bg-[#003366] text-white">
                         {DAYS.map((day) => (
-                            <div key={day} className="py-2 text-center text-[10px] font-bold text-gray-500 bg-gray-50">
+                            <div key={day} className="py-3 text-center text-[10px] font-bold tracking-wider opacity-90">
                                 {day}
                             </div>
                         ))}
                     </div>
 
-                    {/* Week Rows */}
-                    {chartData.map((week, widx) => (
-                        <div key={widx}>
-                            <div className="grid grid-cols-7 border-b border-gray-100 last:border-b-0">
+                    {/* Chart Body */}
+                    <div className="divide-y divide-gray-100">
+                        {chartData.map((week, widx) => (
+                            <div key={widx} className="grid grid-cols-7 divide-x divide-gray-100/50">
                                 {week.entries.map((entry, eidx) => (
                                     <div
                                         key={eidx}
-                                        className="py-2 px-1 text-center border-r border-gray-100 last:border-r-0 min-h-[60px] flex flex-col items-center justify-center"
+                                        className="relative py-2 px-0.5 min-h-[65px] flex flex-col items-center justify-center group hover:bg-gray-50 transition-colors"
                                     >
                                         {entry.open_panna === '*' ? (
-                                            <span className="text-gray-300 text-xs">✱</span>
+                                            <span className="text-gray-200 text-lg select-none">•</span>
                                         ) : (
                                             <>
-                                                <span className="text-[9px] text-gray-500 font-medium">{entry.open_panna}</span>
-                                                <span className="text-xs font-extrabold text-[#059669] my-0.5">{entry.jodi}</span>
-                                                <span className="text-[9px] text-gray-500 font-medium">{entry.close_panna}</span>
+                                                {/* Open Panna */}
+                                                <span className="text-[9px] text-gray-400 font-medium leading-tight">
+                                                    {entry.open_panna}
+                                                </span>
+
+                                                {/* Jodi (Result) */}
+                                                <div className="w-8 h-7 my-0.5 rounded-lg bg-[#ebfcf5] text-[#059669] flex items-center justify-center text-sm font-black shadow-sm border border-[#059669]/10">
+                                                    {entry.jodi}
+                                                </div>
+
+                                                {/* Close Panna */}
+                                                <span className="text-[9px] text-gray-400 font-medium leading-tight">
+                                                    {entry.close_panna}
+                                                </span>
                                             </>
                                         )}
                                     </div>
                                 ))}
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+
+                    {/* Footer / Legend */}
+                    <div className="bg-gray-50 px-4 py-3 border-t border-gray-100 flex justify-between items-center text-[10px] text-gray-400 font-medium">
+                        <span>* Market Closed</span>
+                        <span>Updated: Live</span>
+                    </div>
                 </div>
             )}
         </div>

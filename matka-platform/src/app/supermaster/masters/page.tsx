@@ -142,7 +142,7 @@ export default function SMMastersPage() {
                 </Button>
             </div>
 
-            <DataTable
+            <DataTable<MasterRow>
                 title="Masters"
                 columns={columns}
                 data={data}
@@ -165,7 +165,7 @@ export default function SMMastersPage() {
                     onSuccess={fetchData}
                     userId={coinTarget.id}
                     userName={coinTarget.name}
-                    mode={coinTarget.mode}
+                    type={coinTarget.mode}
                 />
             )}
 
@@ -174,7 +174,7 @@ export default function SMMastersPage() {
                 onClose={() => setBlockTarget(null)}
                 onConfirm={handleBlock}
                 title={blockTarget?.status === 'active' ? 'Block Master' : 'Unblock Master'}
-                description={`Are you sure you want to ${blockTarget?.status === 'active' ? 'block' : 'unblock'} ${blockTarget?.name}?`}
+                message={`Are you sure you want to ${blockTarget?.status === 'active' ? 'block' : 'unblock'} ${blockTarget?.name}?`}
                 variant={blockTarget?.status === 'active' ? 'danger' : 'info'}
                 confirmLabel={blockTarget?.status === 'active' ? 'Block' : 'Unblock'}
             />

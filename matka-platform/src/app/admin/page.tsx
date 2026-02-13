@@ -22,7 +22,6 @@ import {
     Clock,
     Gamepad2,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface DashboardStats {
     totalBetsToday: number;

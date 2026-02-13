@@ -151,7 +151,7 @@ export default function SMSettlementPage() {
                 onClose={() => setSettleTarget(null)}
                 onConfirm={handleSettle}
                 title="Mark as Settled"
-                description={`Mark ₹${Math.abs(settleTarget?.net || 0).toLocaleString('en-IN')} for ${settleTarget?.name} as Le Liya (settled)?`}
+                message={`Mark ₹${Math.abs(settleTarget?.net || 0).toLocaleString('en-IN')} for ${settleTarget?.name} as Le Liya (settled)?`}
                 variant="info"
                 confirmLabel="Le Liya ✓"
             />

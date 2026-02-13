@@ -129,9 +129,9 @@ export default function SMUsersPage() {
 
             <CreateAccountDialog open={showCreate} onClose={() => setShowCreate(false)} onSuccess={fetchData} defaultRole="user" />
             {coinTarget && (
-                <CoinTransferDialog open={!!coinTarget} onClose={() => setCoinTarget(null)} onSuccess={fetchData} userId={coinTarget.id} userName={coinTarget.name} mode={coinTarget.mode} />
+                <CoinTransferDialog open={!!coinTarget} onClose={() => setCoinTarget(null)} onSuccess={fetchData} userId={coinTarget.id} userName={coinTarget.name} type={coinTarget.mode} />
             )}
-            <ConfirmDialog open={!!blockTarget} onClose={() => setBlockTarget(null)} onConfirm={handleBlock} title={blockTarget?.status === 'active' ? 'Block User' : 'Unblock User'} description={`Are you sure you want to ${blockTarget?.status === 'active' ? 'block' : 'unblock'} ${blockTarget?.name}?`} variant={blockTarget?.status === 'active' ? 'danger' : 'info'} confirmLabel={blockTarget?.status === 'active' ? 'Block' : 'Unblock'} />
+            <ConfirmDialog open={!!blockTarget} onClose={() => setBlockTarget(null)} onConfirm={handleBlock} title={blockTarget?.status === 'active' ? 'Block User' : 'Unblock User'} message={`Are you sure you want to ${blockTarget?.status === 'active' ? 'block' : 'unblock'} ${blockTarget?.name}?`} variant={blockTarget?.status === 'active' ? 'danger' : 'info'} confirmLabel={blockTarget?.status === 'active' ? 'Block' : 'Unblock'} />
         </div>
     );
 }

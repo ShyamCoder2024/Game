@@ -53,7 +53,7 @@ export default function MasterUsersPage() {
         fetchData();
     };
 
-    const columns = [
+    const columns: import('@/components/shared/DataTable').Column<UserRow>[] = [
         { key: 'user_id', label: 'User ID', render: (row: UserRow) => <span className="font-semibold text-[#059669]">{row.user_id}</span> },
         { key: 'name', label: 'Name' },
         { key: 'balance', label: 'Balance', isCurrency: true },
@@ -89,6 +89,12 @@ export default function MasterUsersPage() {
         },
     ];
 
+    const totals = data.reduce((acc, row) => ({
+        balance: (acc.balance || 0) + row.balance,
+        exposure: (acc.exposure || 0) + row.exposure,
+        pnl: (acc.pnl || 0) + row.pnl,
+    }), { balance: 0, exposure: 0, pnl: 0 });
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -106,11 +112,11 @@ export default function MasterUsersPage() {
                 </Button>
             </div>
 
-            <DataTable columns={columns} data={data} loading={loading} searchKey="name" searchPlaceholder="Search users..." grandTotal={{ balance: true, exposure: true, pnl: true }} />
+            <DataTable<UserRow> title="Users" columns={columns} data={data} loading={loading} grandTotal={totals} />
 
             <CreateAccountDialog open={showCreate} onClose={() => setShowCreate(false)} onSuccess={fetchData} defaultRole="user" />
-            {coinTarget && <CoinTransferDialog open={!!coinTarget} onClose={() => setCoinTarget(null)} onSuccess={fetchData} userId={coinTarget.id} userName={coinTarget.name} mode={coinTarget.mode} />}
-            <ConfirmDialog open={!!blockTarget} onClose={() => setBlockTarget(null)} onConfirm={handleBlock} title={blockTarget?.status === 'active' ? 'Block User' : 'Unblock User'} description={`Are you sure you want to ${blockTarget?.status === 'active' ? 'block' : 'unblock'} ${blockTarget?.name}?`} variant={blockTarget?.status === 'active' ? 'danger' : 'info'} confirmLabel={blockTarget?.status === 'active' ? 'Block' : 'Unblock'} />
+            {coinTarget && <CoinTransferDialog open={!!coinTarget} onClose={() => setCoinTarget(null)} onSuccess={fetchData} userId={coinTarget.id} userName={coinTarget.name} type={coinTarget.mode} />}
+            <ConfirmDialog open={!!blockTarget} onClose={() => setBlockTarget(null)} onConfirm={handleBlock} title={blockTarget?.status === 'active' ? 'Block User' : 'Unblock User'} message={`Are you sure you want to ${blockTarget?.status === 'active' ? 'block' : 'unblock'} ${blockTarget?.name}?`} variant={blockTarget?.status === 'active' ? 'danger' : 'info'} confirmLabel={blockTarget?.status === 'active' ? 'Block' : 'Unblock'} />
         </div>
     );
 }

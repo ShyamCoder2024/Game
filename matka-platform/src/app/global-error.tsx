@@ -5,6 +5,7 @@ import { AlertTriangle } from 'lucide-react';
 
 export default function GlobalError({
     error,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     reset,
 }: {
     error: Error & { digest?: string };

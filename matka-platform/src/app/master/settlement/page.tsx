@@ -60,6 +60,13 @@ export default function MasterSettlementPage() {
         },
     ];
 
+    const totals = data.reduce((acc, row) => ({
+        lena_hai: (acc.lena_hai || 0) + row.lena_hai,
+        dena_hai: (acc.dena_hai || 0) + row.dena_hai,
+        le_liya: (acc.le_liya || 0) + row.le_liya,
+        net: (acc.net || 0) + row.net,
+    }), { lena_hai: 0, dena_hai: 0, le_liya: 0, net: 0 });
+
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -69,8 +76,8 @@ export default function MasterSettlementPage() {
                     <p className="text-sm text-gray-500">Collection report for your users</p>
                 </div>
             </div>
-            <DataTable columns={columns} data={data} loading={loading} searchKey="name" searchPlaceholder="Search users..." grandTotal={{ lena_hai: true, dena_hai: true, le_liya: true, net: true }} />
-            <ConfirmDialog open={!!settleTarget} onClose={() => setSettleTarget(null)} onConfirm={handleSettle} title="Mark as Settled" description={`Mark ₹${Math.abs(settleTarget?.net || 0).toLocaleString('en-IN')} for ${settleTarget?.name} as Le Liya?`} variant="info" confirmLabel="Le Liya ✓" />
+            <DataTable<SettlementRow> title="Settlement" columns={columns} data={data} loading={loading} grandTotal={totals} />
+            <ConfirmDialog open={!!settleTarget} onClose={() => setSettleTarget(null)} onConfirm={handleSettle} title="Mark as Settled" message={`Mark ₹${Math.abs(settleTarget?.net || 0).toLocaleString('en-IN')} for ${settleTarget?.name} as Le Liya?`} variant="info" confirmLabel="Le Liya ✓" />
         </div>
     );
 }

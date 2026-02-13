@@ -1,16 +1,12 @@
 'use client';
 
-import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
 import Image from 'next/image';
-import { Wallet, Coins } from 'lucide-react';
+import { Coins } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export function UserHeader() {
-    const { user } = useAuthStore();
     const liveBalance = useSocketStore((s) => s.liveBalance);
-    const liveExposure = useSocketStore((s) => s.liveExposure);
-
     // Flash animation when balance changes
     const [flash, setFlash] = useState(false);
     const prevBalance = useRef(liveBalance);
@@ -26,40 +22,39 @@ export function UserHeader() {
     }, [liveBalance]);
 
     const displayBalance = liveBalance !== null ? liveBalance : 0;
-    const displayExposure = liveExposure !== null ? liveExposure : 0;
 
     return (
-        <header className="sticky top-0 z-30 bg-gradient-to-r from-[#059669] to-[#047857] text-white shadow-md">
-            <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
-                <div className="flex items-center gap-2">
-                    <div className="bg-white/20 rounded-lg p-1">
-                        <div className="relative w-9 h-9">
-                            <Image
-                                src="/logo.png"
-                                alt="Logo"
-                                fill
-                                className="object-contain"
-                            />
-                        </div>
+        <header className="fixed top-0 left-0 right-0 bg-[#003366] text-white z-50 shadow-lg px-4 py-5 flex items-center justify-between" style={{ height: '70px' }}>
+            <div className="flex items-center justify-between max-w-lg mx-auto w-full">
+                <div className="flex items-center gap-2"> {/* Reduced gap for cohesion */}
+                    <div className="relative w-10 h-10">
+                        {/* Assuming the user will replace logo.png with their brand logo */}
+                        <Image
+                            src="/logo.png"
+                            alt="All India Matka"
+                            fill
+                            className="object-contain"
+                        />
                     </div>
                     <div>
-                        <p className="text-sm font-semibold">{user?.name || 'Player'}</p>
-                        <p className="text-[10px] text-white/70">{user?.user_id || 'USR000'}</p>
+                        <h1 className="text-lg font-bold leading-tight tracking-wide font-serif text-[#FFF8E7]">
+                            All INDIA
+                        </h1>
+                        <p className="text-[10px] text-white/80 font-medium tracking-wider">
+                            Bet More. Win Money.
+                        </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+
+                <div className="flex items-center gap-2">
                     <div
-                        className={`flex items-center gap-1 bg-white/15 rounded-full px-3 py-1.5 transition-all duration-300 ${flash ? 'ring-2 ring-white/60 scale-105' : ''
+                        className={`flex items-center gap-1.5 bg-black/20 border border-white/10 rounded-full px-3 py-1.5 transition-all duration-300 ${flash ? 'ring-2 ring-yellow-400/50 scale-105 bg-black/30' : ''
                             }`}
                     >
-                        <Coins size={14} />
-                        <span className="text-sm font-bold">
+                        <Coins size={18} strokeWidth={2.5} className="text-yellow-400" /> {/* Increased size & weight */}
+                        <span className="text-sm font-bold text-white">
                             ₹{displayBalance.toLocaleString('en-IN')}
                         </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-white/80">
-                        <Wallet size={12} />
-                        <span>₹{displayExposure.toLocaleString('en-IN')}</span>
                     </div>
                 </div>
             </div>

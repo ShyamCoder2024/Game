@@ -37,7 +37,7 @@ export default function MasterClientsPage() {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    const columns = [
+    const columns: import('@/components/shared/DataTable').Column<ClientRow>[] = [
         { key: 'user_id', label: 'User ID', render: (row: ClientRow) => <span className="font-semibold text-[#0891B2]">{row.user_id}</span> },
         { key: 'name', label: 'Name' },
         { key: 'balance', label: 'Balance', isCurrency: true },
@@ -71,6 +71,12 @@ export default function MasterClientsPage() {
         },
     ];
 
+    const totals = data.reduce((acc, row) => ({
+        balance: (acc.balance || 0) + row.balance,
+        credit_ref: (acc.credit_ref || 0) + row.credit_ref,
+        pnl: (acc.pnl || 0) + row.pnl,
+    }), { balance: 0, credit_ref: 0, pnl: 0 });
+
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -82,8 +88,8 @@ export default function MasterClientsPage() {
                     <p className="text-sm text-gray-500">Your user accounts</p>
                 </div>
             </div>
-            <DataTable columns={columns} data={data} loading={loading} searchKey="name" searchPlaceholder="Search clients..." grandTotal={{ balance: true, credit_ref: true, pnl: true }} />
-            {coinTarget && <CoinTransferDialog open={!!coinTarget} onClose={() => setCoinTarget(null)} onSuccess={fetchData} userId={coinTarget.id} userName={coinTarget.name} mode={coinTarget.mode} />}
+            <DataTable<ClientRow> title="Clients" columns={columns} data={data} loading={loading} grandTotal={totals} />
+            {coinTarget && <CoinTransferDialog open={!!coinTarget} onClose={() => setCoinTarget(null)} onSuccess={fetchData} userId={coinTarget.id} userName={coinTarget.name} type={coinTarget.mode} />}
         </div>
     );
 }

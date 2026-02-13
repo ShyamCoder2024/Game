@@ -2,14 +2,16 @@
 
 export function AnnouncementMarquee({ text }: { text: string }) {
     return (
-        <div className="overflow-hidden bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            <div className="flex">
-                <span className="text-amber-600 font-semibold text-xs mr-2 shrink-0">📢</span>
-                <div className="overflow-hidden whitespace-nowrap">
+        <div className="bg-gradient-to-r from-yellow-50 to-amber-100 border-b border-yellow-200 px-3 py-1.5 shadow-sm relative z-20">
+            <div className="flex items-center gap-3">
+                <div className="bg-yellow-100 p-1.5 rounded-full shrink-0 animate-pulse">
+                    <span className="text-sm">📢</span>
+                </div>
+                <div className="overflow-hidden flex-1 relative h-6">
                     <p
-                        className="text-xs text-amber-700 font-medium inline-block animate-marquee"
+                        className="text-sm text-amber-900 font-bold whitespace-nowrap absolute top-1/2 -translate-y-1/2 animate-marquee"
                         style={{
-                            animation: 'marquee 20s linear infinite',
+                            animation: 'marquee 25s linear infinite',
                         }}
                     >
                         {text}
@@ -18,11 +20,11 @@ export function AnnouncementMarquee({ text }: { text: string }) {
             </div>
             <style jsx>{`
                 @keyframes marquee {
-                    0% { transform: translateX(100%); }
-                    100% { transform: translateX(-100%); }
+                    0% { transform: translate(100%, -50%); }
+                    100% { transform: translate(-100%, -50%); }
                 }
                 .animate-marquee {
-                    animation: marquee 20s linear infinite;
+                    animation: marquee 25s linear infinite;
                 }
             `}</style>
         </div>

@@ -110,7 +110,7 @@ export default function SMClientsPage() {
             <DataTable title="Clients" columns={columns} data={data} loading={loading} onSearch={() => { }} rowKey={(r) => r.id} />
 
             {coinTarget && (
-                <CoinTransferDialog open={!!coinTarget} onClose={() => setCoinTarget(null)} onSuccess={fetchData} userId={coinTarget.id} userName={coinTarget.name} mode={coinTarget.mode} />
+                <CoinTransferDialog open={!!coinTarget} onClose={() => setCoinTarget(null)} onSuccess={fetchData} userId={coinTarget.id} userName={coinTarget.name} type={coinTarget.mode} />
             )}
         </div>
     );

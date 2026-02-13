@@ -22,7 +22,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     if (!mounted || !isAuthenticated || user?.role !== 'user') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#059669]" />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#003366]" />
             </div>
         );
     }
@@ -30,7 +30,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     return (
         <div className="min-h-screen bg-[#F5F7FA] max-w-lg mx-auto relative">
             <UserHeader />
-            <main className="pb-20 px-4 py-4">{children}</main>
+            <main className="pb-20 pt-[70px]">{children}</main>
             <BottomNav />
         </div>
     );

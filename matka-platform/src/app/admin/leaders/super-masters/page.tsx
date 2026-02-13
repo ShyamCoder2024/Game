@@ -105,7 +105,7 @@ export default function SuperMastersPage() {
                 <p className="text-sm text-slate-500 mt-1">Manage super master accounts</p>
             </div>
 
-            <DataTable
+            <DataTable<Member>
                 title="Super Masters"
                 columns={columns}
                 data={data}

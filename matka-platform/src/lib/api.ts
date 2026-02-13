@@ -1,7 +1,7 @@
 // src/lib/api.ts
 // API client — centralized fetch wrapper for all backend calls
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE = typeof window === 'undefined' ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001') : '';
 
 interface ApiResponse<T = unknown> {
     success: boolean;
@@ -45,14 +45,22 @@ class ApiClient {
     }
 
     async get<T>(endpoint: string, params?: Record<string, string>): Promise<ApiResponse<T>> {
-        const url = new URL(`${this.baseUrl}${endpoint}`);
+        // Handle relative URLs by using window.location.origin as base if needed
+        const base = this.baseUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+        const url = new URL(`${this.baseUrl}${endpoint}`, base);
+
         if (params) {
             Object.entries(params).forEach(([key, value]) => {
                 url.searchParams.append(key, value);
             });
         }
 
-        const response = await fetch(url.toString(), {
+        // If we used a dummy base for a relative URL, we might want to pass just the path+search to fetch
+        // taking care to strip the base if it was just for construction. 
+        // However, fetch accepts absolute URLs fine.
+        const finalUrl = this.baseUrl ? url.toString() : (url.pathname + url.search);
+
+        const response = await fetch(finalUrl, {
             method: 'GET',
             headers: this.getHeaders(),
         });

@@ -31,13 +31,13 @@ export function BottomNav() {
                             className={cn(
                                 'flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors min-w-[60px]',
                                 isActive
-                                    ? 'text-[#059669]'
+                                    ? 'text-[#003366]'
                                     : 'text-gray-400 hover:text-gray-600'
                             )}
                         >
                             <div className={cn(
                                 'w-8 h-8 rounded-full flex items-center justify-center transition-all',
-                                isActive && 'bg-emerald-50 scale-110'
+                                isActive && 'bg-blue-50 scale-110'
                             )}>
                                 <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                             </div>

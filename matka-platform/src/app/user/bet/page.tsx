@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Gamepad2, ChevronRight, AlertCircle, Coins, ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -26,6 +27,9 @@ interface Game {
 }
 
 export default function UserBetPage() {
+    const searchParams = useSearchParams();
+    const gameIdParam = searchParams.get('gameId');
+
     // State
     const [loading, setLoading] = useState(true);
     const [games, setGames] = useState<Game[]>([]);
@@ -50,14 +54,25 @@ export default function UserBetPage() {
                 if (res.success && res.data) {
                     setGames(res.data);
                 }
-            } catch (error) {
-                console.error('Failed to fetch games', error);
+            } catch (_error) {
+                console.error('Failed to fetch games', _error);
             } finally {
                 setLoading(false);
             }
         };
         fetchGames();
     }, []);
+
+    // Auto-select game from URL
+    useEffect(() => {
+        if (gameIdParam && games.length > 0 && !selectedGame && step === 1) {
+            const game = games.find((g) => g.id === Number(gameIdParam));
+            if (game) {
+                setSelectedGame(game);
+                setStep(2);
+            }
+        }
+    }, [games, gameIdParam, selectedGame, step]);
 
     const handlePlaceBet = async () => {
         if (!selectedGame || !selectedBetType || !number || !amount) return;
@@ -81,7 +96,7 @@ export default function UserBetPage() {
             } else {
                 addToast(res.error?.message || 'Failed to place bet', 'error');
             }
-        } catch (error) {
+        } catch {
             addToast('Network error occurred', 'error');
         } finally {
             setPlacing(false);
@@ -93,159 +108,245 @@ export default function UserBetPage() {
     const potentialWin = Number(amount) * currentMultiplier;
 
     return (
-        <div className="container mx-auto p-4 max-w-lg mb-24">
-            <h1 className="text-2xl font-bold text-slate-800 mb-6">Place Bet</h1>
+        <div className="pb-24 min-h-screen bg-[#F5F7FA]">
+            {/* Sticky Header */}
+            <div className="sticky top-[70px] z-20 bg-[#F5F7FA]/95 backdrop-blur-md pb-2 pt-4 px-4 mb-4">
+                <div className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <div>
+                        <h1 className="text-xl font-black text-[#003366] flex items-center gap-2 tracking-tight">
+                            <span className="bg-[#E6F0FF] p-1.5 rounded-lg text-[#003366]">
+                                <Gamepad2 size={20} />
+                            </span>
+                            Place Bet
+                        </h1>
+                        <p className="text-[10px] text-gray-400 font-bold tracking-wider uppercase mt-1 ml-1">
+                            {step === 1 ? 'Select Game' : step === 2 ? 'Choose Type' : 'Enter Details'}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
+                        <Coins size={14} className="text-amber-500" />
+                        <span className="text-sm font-bold text-amber-900">₹{balance.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>
+            </div>
 
-            {/* Step 1: Select Game */}
-            {step === 1 && (
-                <div className="space-y-3">
-                    {loading ? (
-                        <div className="space-y-2">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                                <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
-                            ))}
-                        </div>
-                    ) : games.length === 0 ? (
-                        <div className="bg-white rounded-xl py-12 text-center">
-                            <Gamepad2 size={40} className="mx-auto text-gray-300 mb-3" />
-                            <p className="text-gray-500 font-medium">No games available</p>
-                            <p className="text-xs text-gray-400 mt-1">Please check back later</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            {games.map((game) => (
+            <div className="container mx-auto px-4 max-w-lg">
+                {/* Step 1: Select Game */}
+                {step === 1 && (
+                    <div className="space-y-4">
+                        {loading ? (
+                            <div className="space-y-3">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="h-24 bg-white rounded-2xl animate-pulse" />
+                                ))}
+                            </div>
+                        ) : games.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-300">
+                                    <Gamepad2 size={40} />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-800 mb-1">No Active Games</h3>
+                                <p className="text-sm text-gray-500 max-w-[200px] mb-6">
+                                    There are currently no games available for betting.
+                                </p>
                                 <button
-                                    key={game.id}
-                                    disabled={game.status === 'closed'}
-                                    onClick={() => { setSelectedGame(game); setStep(2); setWindowClosed(false); }}
-                                    className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-all ${game.status === 'closed'
-                                        ? 'bg-gray-100 opacity-60 cursor-not-allowed'
-                                        : 'bg-white hover:shadow-md hover:border-[#059669] border border-transparent'
-                                        }`}
+                                    onClick={() => window.location.reload()}
+                                    className="px-6 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 shadow-sm active:scale-95 transition-all"
                                 >
-                                    <div className="w-2 h-10 rounded-full" style={{ backgroundColor: game.color }} />
-                                    <div className="flex-1">
-                                        <p className="font-bold text-gray-800">{game.name}</p>
-                                        <p className="text-xs text-gray-500">{game.open_time} — {game.close_time}</p>
+                                    Refresh Schedule
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {games.map((game) => (
+                                    <button
+                                        key={game.id}
+                                        disabled={game.status === 'closed'}
+                                        onClick={() => { setSelectedGame(game); setStep(2); setWindowClosed(false); }}
+                                        className={`w-full relative overflow-hidden group transition-all duration-300 ${game.status === 'closed'
+                                            ? 'opacity-60 grayscale cursor-not-allowed'
+                                            : 'hover:-translate-y-1 hover:shadow-lg active:scale-[0.98]'
+                                            }`}
+                                    >
+                                        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative z-10">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-1.5 h-12 rounded-full" style={{ backgroundColor: game.color }} />
+                                                    <div className="text-left">
+                                                        <h3 className="text-lg font-black text-[#003366] leading-none mb-1.5">
+                                                            {game.name}
+                                                        </h3>
+                                                        <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                            <span>Open: {game.open_time}</span>
+                                                            <span className="w-1 h-1 rounded-full bg-gray-300" />
+                                                            <span>Close: {game.close_time}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${game.status === 'open'
+                                                        ? 'bg-emerald-50 text-[#059669] border border-emerald-100'
+                                                        : 'bg-red-50 text-red-600 border border-red-100'
+                                                    }`}>
+                                                    {game.status === 'open' ? 'Live' : 'Closed'}
+                                                </div>
+                                            </div>
+
+                                            {game.status === 'open' && (
+                                                <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-3">
+                                                    <span className="text-xs text-gray-400 font-medium">Click to Play</span>
+                                                    <div className="w-6 h-6 rounded-full bg-[#003366] flex items-center justify-center text-white">
+                                                        <ChevronRight size={14} />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Step 2: Select Bet Type */}
+                {step === 2 && selectedGame && (
+                    <div className="space-y-4 animate-in slide-in-from-right-10 duration-300">
+                        <button
+                            onClick={() => setStep(1)}
+                            className="text-xs font-bold text-gray-400 hover:text-[#003366] flex items-center gap-1 transition-colors pl-1"
+                        >
+                            <ArrowLeft size={14} /> Back to Games
+                        </button>
+
+                        <div className="bg-[#003366] rounded-2xl p-4 text-white shadow-lg relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
+                            <h2 className="text-2xl font-black">{selectedGame.name}</h2>
+                            <p className="text-white/60 text-xs font-medium mt-1">Select a market to place your bet</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            {betTypeEntries.map(([key, bt]) => (
+                                <button
+                                    key={key}
+                                    onClick={() => { setSelectedBetType(key); setStep(3); }}
+                                    className="bg-white p-4 rounded-2xl text-center border border-gray-100 shadow-sm hover:border-[#059669] hover:bg-emerald-50/30 active:scale-95 transition-all group"
+                                >
+                                    <div className="w-10 h-10 mx-auto bg-emerald-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-[#059669] transition-colors">
+                                        <Coins size={18} className="text-[#059669] group-hover:text-white transition-colors" />
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${game.status === 'open' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                                            {game.status === 'open' ? '● Open' : '○ Closed'}
-                                        </span>
-                                        {game.status === 'open' && <ChevronRight size={16} className="text-gray-400" />}
+                                    <p className="text-sm font-bold text-gray-800">{bt.name}</p>
+                                    <p className="text-[10px] text-gray-400 mt-1 font-medium">{bt.shortName}</p>
+                                    <div className="mt-2 text-xs font-black text-[#059669] bg-white py-1 px-2 rounded-lg inline-block border border-gray-100">
+                                        {bt.defaultMultiplier}x
                                     </div>
                                 </button>
                             ))}
                         </div>
-                    )}
-                </div>
-            )}
+                    </div>
+                )}
 
-            {/* Step 2: Select Bet Type */}
-            {step === 2 && selectedGame && (
-                <div className="space-y-3">
-                    <div className="flex items-center gap-2 mb-2">
-                        <button onClick={() => setStep(1)} className="text-sm text-[#059669] font-semibold flex items-center">
-                            <ArrowLeft size={16} className="mr-1" /> Back
+                {/* Step 3: Enter Number & Amount */}
+                {step === 3 && selectedGame && selectedBetType && (
+                    <div className="space-y-4 animate-in slide-in-from-right-10 duration-300">
+                        <button
+                            onClick={() => setStep(2)}
+                            className="text-xs font-bold text-gray-400 hover:text-[#003366] flex items-center gap-1 transition-colors pl-1"
+                        >
+                            <ArrowLeft size={14} /> Back to Markets
                         </button>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-gray-800">{selectedGame.name}</h2>
-                        <span className="text-xs text-slate-500">Select Bet Type</span>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        {betTypeEntries.map(([key, bt]) => (
-                            <button
-                                key={key}
-                                onClick={() => { setSelectedBetType(key); setStep(3); }}
-                                className="bg-white p-4 rounded-xl text-center hover:shadow-md hover:border-[#059669] border border-transparent transition-all"
-                            >
-                                <p className="text-2xl font-extrabold text-[#059669] mb-1">{bt.defaultMultiplier}x</p>
-                                <p className="text-sm font-bold text-gray-800">{bt.name}</p>
-                                <p className="text-[10px] text-gray-400 mt-1">{bt.shortName}</p>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
+                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <h2 className="text-lg font-black text-[#003366] text-center mb-6">
+                                {BET_TYPES[selectedBetType].name}
+                            </h2>
 
-            {/* Step 3: Enter Number & Amount */}
-            {step === 3 && selectedGame && selectedBetType && (
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <button onClick={() => setStep(2)} className="text-sm text-[#059669] font-semibold flex items-center">
-                            <ArrowLeft size={16} className="mr-1" /> Back
-                        </button>
-                    </div>
-                    <h2 className="text-lg font-bold text-gray-800">{BET_TYPES[selectedBetType].name}</h2>
-
-                    <div className="bg-white rounded-xl p-4 space-y-4">
-                        <div>
-                            <label className="text-sm font-semibold text-gray-700">Number</label>
-                            <input
-                                type="text"
-                                value={number}
-                                onChange={(e) => setNumber(e.target.value.replace(/\D/g, ''))}
-                                placeholder="Enter number"
-                                className="w-full mt-1 px-4 py-3 border border-gray-200 rounded-xl text-center text-xl font-bold tracking-widest focus:border-[#059669] focus:outline-none focus:ring-2 focus:ring-[#059669]/20"
-                                maxLength={3}
-                            />
-                        </div>
-                        <div>
-                            <label className="text-sm font-semibold text-gray-700">Amount (₹)</label>
-                            <input
-                                type="text"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
-                                placeholder="Enter amount"
-                                className="w-full mt-1 px-4 py-3 border border-gray-200 rounded-xl text-center text-xl font-bold focus:border-[#059669] focus:outline-none focus:ring-2 focus:ring-[#059669]/20"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Preview */}
-                    {amount && (
-                        <div className="bg-emerald-50 rounded-xl p-4 space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Bet Amount</span>
-                                <span className="font-bold text-gray-800">₹{Number(amount).toLocaleString('en-IN')}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Multiplier</span>
-                                <span className="font-bold text-[#059669]">{currentMultiplier}x</span>
-                            </div>
-                            <div className="border-t border-emerald-200 my-1" />
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600 font-semibold">Potential Win</span>
-                                <span className="font-extrabold text-[#059669] text-lg">₹{potentialWin.toLocaleString('en-IN')}</span>
-                            </div>
-                            <div className="flex justify-between text-xs text-gray-500">
-                                <span>Current Balance</span>
-                                <span>₹{balance.toLocaleString('en-IN')}</span>
-                            </div>
-                            <div className="flex justify-between text-xs text-gray-500">
-                                <span>Balance After Bet</span>
-                                <span>₹{(balance - Number(amount)).toLocaleString('en-IN')}</span>
-                            </div>
-                            {Number(amount) > balance && (
-                                <div className="flex items-center gap-1 text-red-500 text-xs mt-1">
-                                    <AlertCircle size={12} /> Insufficient balance
+                            <div className="space-y-5">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 block mb-1.5">
+                                        Lucky Number
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        value={number}
+                                        onChange={(e) => setNumber(e.target.value.replace(/\D/g, ''))}
+                                        placeholder="000"
+                                        className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-center text-3xl font-black tracking-[0.5em] text-[#003366] placeholder:text-gray-300 focus:border-[#003366] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#003366]/5 transition-all"
+                                        maxLength={3}
+                                    />
                                 </div>
-                            )}
+                                <div>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 block mb-1.5">
+                                        Amount (₹)
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">₹</span>
+                                        <input
+                                            type="tel"
+                                            value={amount}
+                                            onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
+                                            placeholder="500"
+                                            className="w-full pl-10 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-center text-2xl font-bold text-gray-800 placeholder:text-gray-300 focus:border-[#003366] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#003366]/5 transition-all"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    )}
 
-                    <button
-                        onClick={handlePlaceBet}
-                        disabled={!number || !amount || Number(amount) > balance || placing || windowClosed}
-                        className="w-full py-4 rounded-xl bg-[#059669] text-white font-bold text-lg hover:bg-[#047857] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                        <Coins size={20} />
-                        {windowClosed ? '🔒 Betting Closed' : placing ? 'Placing...' : 'Place Bet'}
-                    </button>
-                </div>
-            )}
+                        {/* Receipt Preview */}
+                        {amount && (
+                            <div className="relative bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                                {/* Zigzag top border effect (simulated with CSS or SVG) could go here */}
+                                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#003366] to-[#059669]" />
+
+                                <div className="p-5 space-y-3">
+                                    <div className="flex justify-between items-center pb-3 border-b border-dashed border-gray-200">
+                                        <span className="text-xs font-medium text-gray-400">Total Bet</span>
+                                        <span className="text-lg font-bold text-gray-800">₹{Number(amount).toLocaleString('en-IN')}</span>
+                                    </div>
+
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Potential Win</p>
+                                            <p className="text-2xl font-black text-[#059669]">
+                                                ₹{potentialWin.toLocaleString('en-IN')}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Rate</p>
+                                            <p className="text-sm font-bold text-[#003366] bg-[#003366]/5 px-2 py-1 rounded-lg">
+                                                {currentMultiplier}x
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Insufficient Balance Warning */}
+                                {Number(amount) > balance && (
+                                    <div className="bg-red-50 px-4 py-2 text-xs font-bold text-red-600 flex items-center justify-center gap-2">
+                                        <AlertCircle size={14} /> Insufficient Wallet Balance
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <button
+                            onClick={handlePlaceBet}
+                            disabled={!number || !amount || Number(amount) > balance || placing || windowClosed}
+                            className="w-full py-4 rounded-2xl bg-[#003366] text-white font-bold text-lg hover:bg-[#002855] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[#003366]/20"
+                        >
+                            {windowClosed ? (
+                                <>🔒 Betting Closed</>
+                            ) : placing ? (
+                                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <>
+                                    Place Bet <ArrowLeft className="rotate-180" size={18} />
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
