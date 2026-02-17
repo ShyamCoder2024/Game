@@ -40,5 +40,13 @@ export const resultGameIdParamSchema = z.object({
     gameId: z.string().regex(/^\d+$/).transform(Number),
 });
 
+// ==========================================
+// LIVE REPORT QUERY (admin bet aggregation)
+// ==========================================
+export const liveReportQuerySchema = z.object({
+    gameId: z.string().regex(/^\d+$/).transform(Number),
+    session: z.enum(['OPEN', 'CLOSE']),
+});
+
 // Inferred types
 export type DeclareResultInput = z.infer<typeof declareResultSchema>;

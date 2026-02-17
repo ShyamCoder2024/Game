@@ -3,6 +3,7 @@
 
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { ResultService } from '../services/result.service';
+import { LiveReportService } from '../services/liveReport.service';
 import { sendSuccess } from '../utils/response';
 import { validateBody, validateParams, validateQuery } from '../middleware/validate.middleware';
 import {
@@ -11,6 +12,7 @@ import {
     resultListQuerySchema,
     resultIdParamSchema,
     resultGameIdParamSchema,
+    liveReportQuerySchema,
 } from '../validators/result.schema';
 
 // ==========================================
@@ -46,6 +48,16 @@ export async function adminResultRoutes(app: FastifyInstance) {
         handler: async (_request: FastifyRequest, reply) => {
             const matches = await ResultService.getTodayMatches();
             return sendSuccess(reply, { data: matches });
+        },
+    });
+
+    // GET /api/admin/results/live-report — Live bet report aggregation
+    app.get('/live-report', {
+        preHandler: [validateQuery(liveReportQuerySchema)],
+        handler: async (request: FastifyRequest, reply) => {
+            const { gameId, session } = request.query as { gameId: number; session: 'OPEN' | 'CLOSE' };
+            const report = await LiveReportService.getLiveReport(gameId, session);
+            return sendSuccess(reply, { data: report });
         },
     });
 
