@@ -42,20 +42,37 @@ export class BetService {
             throw new AppError('NOT_FOUND', 'Game not found or inactive');
         }
 
-        // 3. Check betting window is open
-        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
-        const window = await prisma.bettingWindow.findFirst({
-            where: {
-                game_id,
-                date: today,
-                session,
-                is_open: true,
-            },
-        });
+        // 3. Check betting window is open using game times (IST)
+        const now = new Date();
+        const istOffset = 5.5 * 60 * 60 * 1000; // IST = UTC+5:30
+        const istNow = new Date(now.getTime() + istOffset);
+        const [nowH, nowM] = [istNow.getUTCHours(), istNow.getUTCMinutes()];
+        const nowMinutes = nowH * 60 + nowM;
 
-        if (!window) {
+        const toMinutes = (t: string) => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        const openMin = toMinutes(game.open_time);
+        const closeMin = toMinutes(game.close_time);
+        const resultMin = toMinutes(game.result_time);
+
+        let windowOpen = false;
+        if (session === 'OPEN') {
+            // OPEN session: between open_time and close_time
+            windowOpen = nowMinutes >= openMin && nowMinutes < closeMin;
+        } else {
+            // CLOSE session: between close_time and result_time
+            windowOpen = nowMinutes >= closeMin && nowMinutes < resultMin;
+        }
+
+        if (!windowOpen) {
             throw new AppError('BETTING_CLOSED', `Betting window for ${session} session is closed`);
         }
+
+        // Today's date in IST (for bet record)
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 
         // 4. Get payout multiplier (game-specific → global fallback)
         const multiplier = await GameService.getActiveMultiplier(game_id, bet_type);

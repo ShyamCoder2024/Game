@@ -36,8 +36,9 @@ export default function UserBetPage() {
     const [step, setStep] = useState(1);
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [selectedBetType, setSelectedBetType] = useState<string | null>(null);
-    const [number, setNumber] = useState('');
+    const [betNumber, setBetNumber] = useState('');
     const [amount, setAmount] = useState('');
+    const [session, setSession] = useState<'OPEN' | 'CLOSE'>('OPEN');
     const [placing, setPlacing] = useState(false);
     const [windowClosed, setWindowClosed] = useState(false);
 
@@ -75,21 +76,22 @@ export default function UserBetPage() {
     }, [games, gameIdParam, selectedGame, step]);
 
     const handlePlaceBet = async () => {
-        if (!selectedGame || !selectedBetType || !number || !amount) return;
+        if (!selectedGame || !selectedBetType || !betNumber || !amount) return;
 
         setPlacing(true);
         try {
             const res = await api.post('/api/bets/place', {
                 game_id: selectedGame.id,
                 bet_type: selectedBetType,
-                number: number,
-                amount: Number(amount)
+                bet_number: betNumber,
+                session,
+                amount: Number(amount),
             });
 
             if (res.success) {
                 addToast('Bet placed successfully!', 'success');
                 setStep(1);
-                setNumber('');
+                setBetNumber('');
                 setAmount('');
                 setSelectedBetType(null);
                 setSelectedGame(null);
@@ -185,8 +187,8 @@ export default function UserBetPage() {
                                                 </div>
 
                                                 <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${game.status === 'open'
-                                                        ? 'bg-emerald-50 text-[#059669] border border-emerald-100'
-                                                        : 'bg-red-50 text-red-600 border border-red-100'
+                                                    ? 'bg-emerald-50 text-[#059669] border border-emerald-100'
+                                                    : 'bg-red-50 text-red-600 border border-red-100'
                                                     }`}>
                                                     {game.status === 'open' ? 'Live' : 'Closed'}
                                                 </div>
@@ -261,19 +263,49 @@ export default function UserBetPage() {
                             </h2>
 
                             <div className="space-y-5">
+                                {/* Session selector */}
+                                <div>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 block mb-1.5">
+                                        Session
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setSession('OPEN')}
+                                            className={`flex-1 py-3 rounded-2xl text-sm font-bold transition-all ${session === 'OPEN'
+                                                    ? 'bg-[#003366] text-white shadow-md'
+                                                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                }`}
+                                        >
+                                            🌅 OPEN
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSession('CLOSE')}
+                                            className={`flex-1 py-3 rounded-2xl text-sm font-bold transition-all ${session === 'CLOSE'
+                                                    ? 'bg-[#003366] text-white shadow-md'
+                                                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                }`}
+                                        >
+                                            🌙 CLOSE
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <div>
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 block mb-1.5">
                                         Lucky Number
                                     </label>
                                     <input
                                         type="tel"
-                                        value={number}
-                                        onChange={(e) => setNumber(e.target.value.replace(/\D/g, ''))}
+                                        value={betNumber}
+                                        onChange={(e) => setBetNumber(e.target.value.replace(/\D/g, ''))}
                                         placeholder="000"
                                         className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-center text-3xl font-black tracking-[0.5em] text-[#003366] placeholder:text-gray-300 focus:border-[#003366] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#003366]/5 transition-all"
                                         maxLength={3}
                                     />
                                 </div>
+
                                 <div>
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 block mb-1.5">
                                         Amount (₹)
@@ -295,7 +327,6 @@ export default function UserBetPage() {
                         {/* Receipt Preview */}
                         {amount && (
                             <div className="relative bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                                {/* Zigzag top border effect (simulated with CSS or SVG) could go here */}
                                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#003366] to-[#059669]" />
 
                                 <div className="p-5 space-y-3">
@@ -331,7 +362,7 @@ export default function UserBetPage() {
 
                         <button
                             onClick={handlePlaceBet}
-                            disabled={!number || !amount || Number(amount) > balance || placing || windowClosed}
+                            disabled={!betNumber || !amount || Number(amount) > balance || placing || windowClosed}
                             className="w-full py-4 rounded-2xl bg-[#003366] text-white font-bold text-lg hover:bg-[#002855] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[#003366]/20"
                         >
                             {windowClosed ? (
