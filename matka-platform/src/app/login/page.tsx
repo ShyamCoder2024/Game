@@ -31,7 +31,7 @@ export default function LoginPage() {
         try {
             const res = await api.post<{
                 user: { id: number; user_id: string; name: string; role: 'admin' | 'supermaster' | 'master' | 'user' };
-                accessToken: string;
+                token: string;
             }>('/api/auth/login', { user_id: userId, password });
 
             if (!res.success || !res.data) {
@@ -39,7 +39,7 @@ export default function LoginPage() {
                 return;
             }
 
-            login(res.data.user, res.data.accessToken);
+            login(res.data.user, res.data.token);
 
             // Redirect based on role
             const roleRoutes: Record<string, string> = {
