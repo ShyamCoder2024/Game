@@ -11,11 +11,15 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
 import {
-    Megaphone, BookOpen, Plus, X, Save, Trash2,
+    Megaphone, BookOpen, Plus, X, Save, Trash2, Bell, Phone,
 } from 'lucide-react';
 
 interface Announcement {
     id: number; title: string; message: string; is_active: boolean; created_at: string;
+}
+
+interface Notification {
+    id: number; title: string; message: string; created_at: string; creator?: { name: string };
 }
 
 export default function ContentPage() {
@@ -30,15 +34,32 @@ export default function ContentPage() {
     const [rulesLoading, setRulesLoading] = useState(false);
     const [rulesMsg, setRulesMsg] = useState('');
 
+    // Notifications state
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [notifTitle, setNotifTitle] = useState('');
+    const [notifMessage, setNotifMessage] = useState('');
+    const [notifLoading, setNotifLoading] = useState(false);
+    const [notifError, setNotifError] = useState('');
+    const [notifSuccess, setNotifSuccess] = useState('');
+
+    // WhatsApp state
+    const [whatsapp, setWhatsapp] = useState('');
+    const [whatsappLoading, setWhatsappLoading] = useState(false);
+    const [whatsappMsg, setWhatsappMsg] = useState('');
+
     const fetchContent = useCallback(async () => {
         setLoading(true);
         try {
-            const [annRes, rulesRes] = await Promise.allSettled([
+            const [annRes, rulesRes, notifRes, waRes] = await Promise.allSettled([
                 api.get<Announcement[]>('/api/admin/announcements'),
                 api.get<{ content: string }>('/api/admin/rules'),
+                api.get<Notification[]>('/api/notifications'),
+                api.get<{ value: string }>('/api/admin/settings/whatsapp_number'),
             ]);
             if (annRes.status === 'fulfilled' && annRes.value.data) setAnnouncements(annRes.value.data);
             if (rulesRes.status === 'fulfilled' && rulesRes.value.data) setRules(rulesRes.value.data.content);
+            if (notifRes.status === 'fulfilled' && notifRes.value.data) setNotifications(notifRes.value.data);
+            if (waRes.status === 'fulfilled' && waRes.value.data) setWhatsapp(waRes.value.data.value || '');
         } catch { /* graceful */ } finally { setLoading(false); }
     }, []);
 
@@ -76,6 +97,41 @@ export default function ContentPage() {
                 setTimeout(() => setRulesMsg(''), 3000);
             }
         } catch { /* graceful */ } finally { setRulesLoading(false); }
+    };
+
+    const handleCreateNotification = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setNotifError(''); setNotifSuccess('');
+        setNotifLoading(true);
+        try {
+            const res = await api.post('/api/admin/notifications', { title: notifTitle, message: notifMessage });
+            if (!res.success) {
+                setNotifError(res.error?.message || 'Failed to create notification');
+                return;
+            }
+            setNotifTitle(''); setNotifMessage('');
+            setNotifSuccess('Notification sent!');
+            setTimeout(() => setNotifSuccess(''), 3000);
+            fetchContent();
+        } catch { setNotifError('Network error. Please try again.'); } finally { setNotifLoading(false); }
+    };
+
+    const handleDeleteNotification = async (id: number) => {
+        try {
+            await api.delete(`/api/admin/notifications/${id}`);
+            fetchContent();
+        } catch { /* graceful */ }
+    };
+
+    const handleSaveWhatsapp = async () => {
+        setWhatsappLoading(true); setWhatsappMsg('');
+        try {
+            const res = await api.put('/api/admin/settings/whatsapp_number', { value: whatsapp });
+            if (res.success) {
+                setWhatsappMsg('WhatsApp number saved!');
+                setTimeout(() => setWhatsappMsg(''), 3000);
+            }
+        } catch { /* graceful */ } finally { setWhatsappLoading(false); }
     };
 
     return (
@@ -152,6 +208,69 @@ export default function ContentPage() {
                         </Button>
                     </CardContent>
                 </Card>
+
+                {/* Notifications */}
+                <Card className="border-0 shadow-md lg:col-span-2">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                            <Bell size={16} className="text-orange-500" />
+                            Push Notifications
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Create form */}
+                            <form onSubmit={handleCreateNotification} className="space-y-3">
+                                <div className="space-y-2">
+                                    <Label>Title</Label>
+                                    <Input
+                                        value={notifTitle}
+                                        onChange={(e) => setNotifTitle(e.target.value)}
+                                        placeholder="Notification title"
+                                        required
+                                        className="bg-slate-50"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Message</Label>
+                                    <textarea
+                                        value={notifMessage}
+                                        onChange={(e) => setNotifMessage(e.target.value)}
+                                        placeholder="Notification message..."
+                                        required
+                                        className="w-full h-20 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    />
+                                </div>
+                                {notifError && <p className="text-sm text-red-600 bg-red-50 rounded-lg p-2">{notifError}</p>}
+                                {notifSuccess && <p className="text-sm text-green-600 bg-green-50 rounded-lg p-2">{notifSuccess}</p>}
+                                <Button type="submit" className="bg-orange-600 hover:bg-orange-700 text-white" disabled={notifLoading}>
+                                    <Bell size={14} className="mr-1" />
+                                    {notifLoading ? 'Sending...' : 'Send Notification'}
+                                </Button>
+                            </form>
+
+                            {/* Existing notifications */}
+                            <div className="space-y-2 max-h-[250px] overflow-y-auto">
+                                {notifications.length === 0 ? (
+                                    <div className="py-6 text-center text-slate-400">
+                                        <Bell size={20} className="mx-auto mb-2 opacity-40" />
+                                        <p className="text-sm">No notifications yet</p>
+                                    </div>
+                                ) : notifications.map((n) => (
+                                    <div key={n.id} className="p-3 bg-slate-50 rounded-lg flex items-start justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-slate-700 truncate">{n.title}</p>
+                                            <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{n.message}</p>
+                                        </div>
+                                        <button onClick={() => handleDeleteNotification(n.id)} className="p-1 hover:bg-red-50 rounded text-red-400 hover:text-red-600 flex-shrink-0">
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Add announcement modal */}
@@ -187,6 +306,36 @@ export default function ContentPage() {
                     </div>
                 </div>
             )}
+
+            {/* WhatsApp Number Management */}
+            <Card className="border-0 shadow-md">
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                        <Phone size={16} className="text-green-500" />
+                        WhatsApp Number
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-slate-500 mb-3">This number is shown to users for support. Include country code (e.g. +919876543210).</p>
+                    <div className="flex gap-3">
+                        <Input
+                            value={whatsapp}
+                            onChange={(e) => setWhatsapp(e.target.value)}
+                            placeholder="+919876543210"
+                            className="bg-slate-50 flex-1"
+                        />
+                        <Button
+                            onClick={handleSaveWhatsapp}
+                            disabled={whatsappLoading}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                            <Save size={14} className="mr-1" />
+                            {whatsappLoading ? 'Saving...' : 'Save'}
+                        </Button>
+                    </div>
+                    {whatsappMsg && <p className="text-sm text-green-600 mt-2 font-medium">{whatsappMsg}</p>}
+                </CardContent>
+            </Card>
         </div>
     );
 }

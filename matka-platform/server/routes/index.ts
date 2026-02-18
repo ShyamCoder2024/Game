@@ -16,6 +16,7 @@ import { adminRoutes } from './admin.routes';
 import { reportRoutes } from './report.routes';
 import { creditRoutes } from './credit.routes';
 import { exportRoutes } from './export.routes';
+import { notificationRoutes, adminNotificationRoutes } from './notification.routes';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { roleMiddleware } from '../middleware/role.middleware';
 import { hierarchyMiddleware } from '../middleware/hierarchy.middleware';
@@ -42,6 +43,7 @@ export async function setupRoutes(app: FastifyInstance) {
         protectedApp.register(publicGameRoutes, { prefix: '/api/games' });
         protectedApp.register(betRoutes, { prefix: '/api/bets' });
         protectedApp.register(publicResultRoutes, { prefix: '/api/results' });
+        protectedApp.register(notificationRoutes, { prefix: '/api/notifications' });
 
         // --- Admin routes (admin role only) ---
         protectedApp.register(async (adminApp) => {
@@ -50,6 +52,7 @@ export async function setupRoutes(app: FastifyInstance) {
             adminApp.register(adminGameRoutes, { prefix: '/api/admin/games' });
             adminApp.register(adminResultRoutes, { prefix: '/api/admin/results' });
             adminApp.register(settlementRoutes, { prefix: '/api/admin/settlement' });
+            adminApp.register(adminNotificationRoutes, { prefix: '/api/admin/notifications' });
             adminApp.register(adminRoutes, { prefix: '/api/admin' });
         });
 

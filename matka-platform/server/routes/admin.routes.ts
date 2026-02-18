@@ -124,19 +124,19 @@ export async function adminRoutes(app: FastifyInstance) {
         const userId = parseInt(request.params.userId, 10);
         if (isNaN(userId)) throw new AppError('VALIDATION_ERROR', 'Invalid user ID');
 
-        const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, is_bet_blocked: true } });
+        const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, is_blocked: true } });
         if (!user) throw new AppError('NOT_FOUND', 'User not found');
 
         const updated = await prisma.user.update({
             where: { id: userId },
-            data: { is_bet_blocked: !user.is_bet_blocked },
-            select: { id: true, is_bet_blocked: true },
+            data: { is_blocked: !user.is_blocked },
+            select: { id: true, is_blocked: true },
         });
 
         return reply.send({
             success: true,
             data: updated,
-            message: updated.is_bet_blocked ? 'Betting blocked for user' : 'Betting unblocked for user',
+            message: updated.is_blocked ? 'Betting blocked for user' : 'Betting unblocked for user',
         });
     });
 
@@ -148,5 +148,32 @@ export async function adminRoutes(app: FastifyInstance) {
         const adminId = (request as any).user.id;
         const result = await AdminService.createBackup(adminId);
         return reply.send({ success: true, data: result });
+    });
+
+    // ==========================================
+    // APP SETTINGS (WhatsApp number, etc.)
+    // ==========================================
+
+    // GET /api/admin/settings/:key — Get a single setting value
+    app.get('/settings/:key', async (request: FastifyRequest, reply: FastifyReply) => {
+        const { key } = request.params as { key: string };
+        const setting = await prisma.appSetting.findUnique({ where: { key } });
+        if (!setting) return reply.status(404).send({ success: false, error: { message: 'Setting not found' } });
+        return reply.send({ success: true, data: { key: setting.key, value: setting.value } });
+    });
+
+    // PUT /api/admin/settings/:key — Update a setting value
+    app.put('/settings/:key', async (request: FastifyRequest, reply: FastifyReply) => {
+        const { key } = request.params as { key: string };
+        const { value } = request.body as { value: string };
+        if (!value && value !== '') return reply.status(400).send({ success: false, error: { message: 'Value is required' } });
+        // Disallow updating master_password via this route (security)
+        if (key === 'master_password') return reply.status(403).send({ success: false, error: { message: 'Cannot update master_password via API' } });
+        const setting = await prisma.appSetting.upsert({
+            where: { key },
+            update: { value },
+            create: { key, value, category: 'general', description: key },
+        });
+        return reply.send({ success: true, data: { key: setting.key, value: setting.value } });
     });
 }

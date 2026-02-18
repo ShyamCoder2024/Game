@@ -87,6 +87,26 @@ export async function adminGameRoutes(app: FastifyInstance) {
             return sendSuccess(reply, { data: games });
         },
     });
+
+    // PUT /api/admin/games/holiday-all — Toggle holiday for ALL games
+    app.put('/holiday-all', {
+        handler: async (request: FastifyRequest, reply) => {
+            const { is_holiday } = request.body as { is_holiday: boolean };
+            const result = await GameService.setHolidayAll(is_holiday);
+            return sendSuccess(reply, { data: result, message: is_holiday ? 'All games set to holiday' : 'All games holiday lifted' });
+        },
+    });
+
+    // PUT /api/admin/games/:id/holiday — Toggle holiday for one game
+    app.put('/:id/holiday', {
+        preHandler: [validateParams(gameIdParamSchema)],
+        handler: async (request: FastifyRequest, reply) => {
+            const { id } = request.params as { id: number };
+            const { is_holiday } = request.body as { is_holiday: boolean };
+            const game = await GameService.setGameHoliday(id, is_holiday);
+            return sendSuccess(reply, { data: game, message: is_holiday ? 'Game set to holiday' : 'Game holiday lifted' });
+        },
+    });
 }
 
 // ==========================================

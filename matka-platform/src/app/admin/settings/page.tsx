@@ -3,14 +3,14 @@
 // src/app/admin/settings/page.tsx
 // Settings — password change, user blocking, DB backup
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import {
-    Lock, Shield, Database, Download, CheckCircle2,
+    Lock, Shield, Database, Download, CheckCircle2, Percent,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -35,6 +35,40 @@ export default function SettingsPage() {
     const [memberPwdLoading, setMemberPwdLoading] = useState(false);
     const [memberPwdMsg, setMemberPwdMsg] = useState('');
     const [memberPwdError, setMemberPwdError] = useState('');
+
+    // Default Rates (B10)
+    const [dealPct, setDealPct] = useState('85');
+    const [minBet, setMinBet] = useState('10');
+    const [maxBet, setMaxBet] = useState('100000');
+    const [ratesLoading, setRatesLoading] = useState(false);
+    const [ratesMsg, setRatesMsg] = useState('');
+
+    useEffect(() => {
+        const fetchRates = async () => {
+            const [dealRes, minRes, maxRes] = await Promise.allSettled([
+                api.get<{ value: string }>('/api/admin/settings/default_deal_percentage'),
+                api.get<{ value: string }>('/api/admin/settings/min_bet_amount'),
+                api.get<{ value: string }>('/api/admin/settings/max_bet_amount'),
+            ]);
+            if (dealRes.status === 'fulfilled' && dealRes.value.data) setDealPct(dealRes.value.data.value);
+            if (minRes.status === 'fulfilled' && minRes.value.data) setMinBet(minRes.value.data.value);
+            if (maxRes.status === 'fulfilled' && maxRes.value.data) setMaxBet(maxRes.value.data.value);
+        };
+        fetchRates();
+    }, []);
+
+    const handleSaveRates = async () => {
+        setRatesLoading(true); setRatesMsg('');
+        try {
+            await Promise.all([
+                api.put('/api/admin/settings/default_deal_percentage', { value: dealPct }),
+                api.put('/api/admin/settings/min_bet_amount', { value: minBet }),
+                api.put('/api/admin/settings/max_bet_amount', { value: maxBet }),
+            ]);
+            setRatesMsg('Default rates saved!');
+            setTimeout(() => setRatesMsg(''), 3000);
+        } catch { /* graceful */ } finally { setRatesLoading(false); }
+    };
 
     const handleMemberPasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -249,6 +283,37 @@ export default function SettingsPage() {
                                 {memberPwdLoading ? 'Changing...' : 'Change Member Password'}
                             </Button>
                         </form>
+                    </CardContent>
+                </Card>
+
+                {/* Default Rates */}
+                <Card className="border-0 shadow-md">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                            <Percent size={16} className="text-indigo-500" />
+                            Default Rates
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-slate-500">These values are used as defaults when creating new accounts and for bet limits platform-wide.</p>
+                        <div className="space-y-2">
+                            <Label className="text-xs">Default Deal Percentage (%)</Label>
+                            <Input value={dealPct} onChange={(e) => setDealPct(e.target.value)} type="number" min="0" max="100" className="bg-slate-50" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label className="text-xs">Min Bet Amount (₹)</Label>
+                                <Input value={minBet} onChange={(e) => setMinBet(e.target.value)} type="number" min="1" className="bg-slate-50" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs">Max Bet Amount (₹)</Label>
+                                <Input value={maxBet} onChange={(e) => setMaxBet(e.target.value)} type="number" min="1" className="bg-slate-50" />
+                            </div>
+                        </div>
+                        {ratesMsg && <p className="text-sm text-green-600 bg-green-50 rounded-lg p-2 flex items-center gap-1"><CheckCircle2 size={14} />{ratesMsg}</p>}
+                        <Button onClick={handleSaveRates} disabled={ratesLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                            {ratesLoading ? 'Saving...' : 'Save Default Rates'}
+                        </Button>
                     </CardContent>
                 </Card>
             </div>

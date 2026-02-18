@@ -259,4 +259,29 @@ export class GameService {
             } : null,
         };
     }
+
+    // ==========================================
+    // HOLIDAY MANAGEMENT
+    // ==========================================
+
+    /** Toggle holiday for a single game */
+    static async setGameHoliday(gameId: number, isHoliday: boolean) {
+        const game = await prisma.game.findUnique({ where: { id: gameId } });
+        if (!game || game.is_deleted) {
+            throw new AppError('NOT_FOUND', 'Game not found');
+        }
+        return prisma.game.update({
+            where: { id: gameId },
+            data: { is_holiday: isHoliday },
+        });
+    }
+
+    /** Toggle holiday for ALL games */
+    static async setHolidayAll(isHoliday: boolean) {
+        const result = await prisma.game.updateMany({
+            where: { is_deleted: false },
+            data: { is_holiday: isHoliday },
+        });
+        return { updated: result.count };
+    }
 }

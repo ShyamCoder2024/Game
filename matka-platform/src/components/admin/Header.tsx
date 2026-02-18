@@ -7,8 +7,9 @@ import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Menu, LogOut, Bell } from 'lucide-react';
+import { Menu, LogOut } from 'lucide-react';
 import { ROLE_NAMES, PANEL_COLORS } from '@/lib/constants';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface HeaderProps {
     onMenuClick: () => void;
@@ -54,10 +55,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             {/* Right: Notifications + Role + Logout */}
             <div className="flex items-center gap-3">
                 {/* Notification bell */}
-                <button className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
-                    <Bell size={18} />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-                </button>
+                <NotificationBell />
 
                 {/* Role badge */}
                 <Badge

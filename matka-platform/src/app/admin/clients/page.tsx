@@ -70,6 +70,18 @@ export default function ClientsPage() {
     const columns: Column<Client>[] = [
         { key: 'user_id', label: 'ID', render: (r) => <span className="font-mono text-xs font-semibold text-slate-600">{r.user_id}</span> },
         { key: 'name', label: 'Name', sortable: true, render: (r) => <span className="font-medium text-slate-700">{r.name}</span> },
+        {
+            key: 'role', label: 'Role', align: 'center',
+            render: (r) => {
+                const roleColors: Record<string, string> = {
+                    user: 'bg-blue-100 text-blue-700',
+                    master: 'bg-purple-100 text-purple-700',
+                    supermaster: 'bg-orange-100 text-orange-700',
+                    admin: 'bg-red-100 text-red-700',
+                };
+                return <Badge className={roleColors[r.role] || 'bg-slate-100 text-slate-600'}>{r.role}</Badge>;
+            },
+        },
         { key: 'parent_user_id', label: 'Parent', render: (r) => <span className="text-xs text-slate-500">{r.parent_user_id}</span> },
         { key: 'balance', label: 'Balance', align: 'right', sortable: true, isCurrency: true, grandTotalKey: 'balance' },
         { key: 'exposure', label: 'Exposure', align: 'right', isCurrency: true, grandTotalKey: 'exposure' },

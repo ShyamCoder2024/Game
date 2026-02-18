@@ -4,8 +4,9 @@ import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Menu, LogOut, Bell, Wallet } from 'lucide-react';
+import { Menu, LogOut, Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface SMHeaderProps {
     onMenuClick: () => void;
@@ -63,10 +64,7 @@ export function SMHeader({ onMenuClick }: SMHeaderProps) {
 
             {/* Desktop Action Section - Hidden on Mobile */}
             <div className="hidden lg:flex items-center gap-3">
-                <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <Bell size={18} className="text-gray-600" />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-[#7C3AED] rounded-full" />
-                </button>
+                <NotificationBell />
                 <div className="flex items-center gap-1.5 bg-[#7C3AED]/10 text-[#7C3AED] rounded-full px-3 py-1 text-xs font-bold">
                     <Wallet size={14} />
                     ₹{(liveBalance ?? 0).toLocaleString('en-IN')}

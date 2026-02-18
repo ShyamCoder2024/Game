@@ -1,5 +1,8 @@
 'use client';
 
+// src/app/user/layout.tsx
+// FIX: Replaced mounted state with _hasHydrated from authStore to eliminate navigation lag
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
@@ -7,25 +10,27 @@ import { UserHeader } from '@/components/user/UserHeader';
 import { BottomNav } from '@/components/user/BottomNav';
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated, user } = useAuthStore();
+    const { isAuthenticated, user, _hasHydrated } = useAuthStore();
     const router = useRouter();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => { setMounted(true); }, []);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {
-        if (mounted && (!isAuthenticated || user?.role !== 'user')) {
+        if (_hasHydrated && (!isAuthenticated || user?.role !== 'user')) {
             router.push('/login');
         }
-    }, [mounted, isAuthenticated, user, router]);
+    }, [_hasHydrated, isAuthenticated, user, router]);
 
-    if (!mounted || !isAuthenticated || user?.role !== 'user') {
+    // Only show spinner on initial hydration (first load), not on every navigation
+    if (!_hasHydrated) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#003366]" />
             </div>
         );
     }
+
+    // After hydration, if not authenticated/wrong role, render nothing (redirect is in flight)
+    if (!isAuthenticated || user?.role !== 'user') return null;
 
     return (
         <div className="min-h-screen bg-[#F5F7FA] max-w-lg mx-auto relative">

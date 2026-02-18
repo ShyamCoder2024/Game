@@ -66,6 +66,17 @@ export default function SuperMastersPage() {
     const columns: Column<Member>[] = [
         { key: 'user_id', label: 'ID', render: (r) => <span className="font-mono text-xs font-semibold text-blue-600">{r.user_id}</span> },
         { key: 'name', label: 'Name', sortable: true, render: (r) => <span className="font-medium text-slate-700">{r.name}</span> },
+        {
+            key: 'role', label: 'Role', align: 'center',
+            render: (r) => {
+                const roleColors: Record<string, string> = {
+                    user: 'bg-blue-100 text-blue-700',
+                    master: 'bg-purple-100 text-purple-700',
+                    supermaster: 'bg-orange-100 text-orange-700',
+                };
+                return <Badge className={roleColors[r.role] || 'bg-slate-100 text-slate-600'}>{r.role}</Badge>;
+            },
+        },
         { key: 'balance', label: 'Balance', align: 'right', sortable: true, isCurrency: true, grandTotalKey: 'balance' },
         { key: 'exposure', label: 'Exposure', align: 'right', isCurrency: true, grandTotalKey: 'exposure' },
         { key: 'deal_percentage', label: 'Deal %', align: 'center', sortable: true, render: (r) => <span className="font-semibold">{r.deal_percentage}%</span> },

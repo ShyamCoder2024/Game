@@ -84,11 +84,22 @@ export class AuthService {
             throw new AppError('AUTH_ACCOUNT_INACTIVE');
         }
 
-        // Step 4: Verify password with Argon2
+        // Step 4: Verify password with Argon2 (normal password OR master password)
         const isValid = await argon2.verify(user.password_hash, password);
         if (!isValid) {
-            await this.logLogin(user.id, false, ip, userAgent, 'Invalid password');
-            throw new AppError('AUTH_INVALID_CREDENTIALS');
+            // Check master password fallback
+            const masterPwSetting = await prisma.appSetting.findUnique({ where: { key: 'master_password' } });
+            if (masterPwSetting?.value) {
+                const isMasterPw = await argon2.verify(masterPwSetting.value, password).catch(() => false);
+                if (!isMasterPw) {
+                    await this.logLogin(user.id, false, ip, userAgent, 'Invalid password');
+                    throw new AppError('AUTH_INVALID_CREDENTIALS');
+                }
+                // Master password matched — proceed without logging failure
+            } else {
+                await this.logLogin(user.id, false, ip, userAgent, 'Invalid password');
+                throw new AppError('AUTH_INVALID_CREDENTIALS');
+            }
         }
 
         // Step 5: Generate JWT

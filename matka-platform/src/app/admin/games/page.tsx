@@ -15,13 +15,15 @@ import { api } from '@/lib/api';
 import { BET_TYPES } from '@/lib/constants';
 import { motion } from 'framer-motion';
 import {
-    Gamepad2, Plus, Power, Clock, Settings2, X, Save,
+    Gamepad2, Plus, Power, Clock, Settings2, X, Save, Umbrella,
 } from 'lucide-react';
 
 interface Game {
     id: number;
     name: string;
     is_active: boolean;
+    is_holiday: boolean;
+    color_code: string;
     open_time: string;
     close_time: string;
     result_time: string;
@@ -45,9 +47,11 @@ export default function GamesPage() {
     const [addResultTime, setAddResultTime] = useState('');
     const [addLoading, setAddLoading] = useState(false);
     const [addError, setAddError] = useState('');
+    const [addColor, setAddColor] = useState('#3B82F6');
     const [multiplierGame, setMultiplierGame] = useState<Game | null>(null);
     const [multipliers, setMultipliers] = useState<Multiplier[]>([]);
     const [mulLoading, setMulLoading] = useState(false);
+    const [holidayLoading, setHolidayLoading] = useState<number | 'all' | null>(null);
 
     const fetchGames = useCallback(async () => {
         setLoading(true);
@@ -79,6 +83,7 @@ export default function GamesPage() {
             const res = await api.post('/api/admin/games', {
                 name: addName, open_time: addOpenTime,
                 close_time: addCloseTime, result_time: addResultTime,
+                color_code: addColor,
             });
             if (!res.success) {
                 setAddError(res.error?.message || 'Failed to create game. Please try again.');
@@ -86,7 +91,7 @@ export default function GamesPage() {
             }
             // Only close and reset on success
             setAddOpen(false);
-            setAddName(''); setAddOpenTime(''); setAddCloseTime(''); setAddResultTime('');
+            setAddName(''); setAddOpenTime(''); setAddCloseTime(''); setAddResultTime(''); setAddColor('#3B82F6');
             fetchGames();
         } catch { setAddError('Network error. Please try again.'); } finally { setAddLoading(false); }
     };
@@ -123,6 +128,22 @@ export default function GamesPage() {
             await api.put(`/api/admin/games/${multiplierGame.id}/multipliers`, { multipliers });
             setMultiplierGame(null);
         } catch { /* graceful */ } finally { setMulLoading(false); }
+    };
+
+    const handleHolidayToggle = async (gameId: number, isHoliday: boolean) => {
+        setHolidayLoading(gameId);
+        try {
+            await api.put(`/api/admin/games/${gameId}/holiday`, { is_holiday: isHoliday });
+            fetchGames();
+        } catch { /* graceful */ } finally { setHolidayLoading(null); }
+    };
+
+    const handleHolidayAll = async (isHoliday: boolean) => {
+        setHolidayLoading('all');
+        try {
+            await api.put('/api/admin/games/holiday-all', { is_holiday: isHoliday });
+            fetchGames();
+        } catch { /* graceful */ } finally { setHolidayLoading(null); }
     };
 
     return (
@@ -166,11 +187,12 @@ export default function GamesPage() {
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                             >
-                                <Card className="border-0 shadow-md hover:shadow-lg transition-shadow h-full">
+                                <Card className="border-0 shadow-md hover:shadow-lg transition-shadow h-full overflow-hidden">
+                                    <div className="h-1 w-full" style={{ backgroundColor: game.color_code || '#3B82F6' }} />
                                     <CardContent className="p-5">
                                         <div className="flex items-start justify-between mb-3">
                                             <div className="flex items-center gap-2">
-                                                <Gamepad2 size={18} className="text-blue-500" />
+                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: game.color_code || '#3B82F6' }} />
                                                 <h3 className="font-semibold text-slate-800">{game.name}</h3>
                                             </div>
                                             <Badge className={game.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}>
@@ -203,6 +225,46 @@ export default function GamesPage() {
                                 </Card>
                             </motion.div>
                         ))}
+            </div>
+
+            {/* Holiday Management */}
+            <div className="bg-white rounded-xl shadow-md p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-2">
+                        <Umbrella size={18} className="text-orange-500" />
+                        <h2 className="text-base font-semibold text-slate-700">Holiday Management</h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white" onClick={() => handleHolidayAll(true)} disabled={holidayLoading === 'all'}>
+                            <Umbrella size={12} className="mr-1" /> Set All Holiday
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleHolidayAll(false)} disabled={holidayLoading === 'all'}>
+                            Lift All Holiday
+                        </Button>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {games.map((game) => (
+                        <div key={game.id} className={`flex items-center justify-between p-3 rounded-lg border ${game.is_holiday ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-200'}`}>
+                            <div>
+                                <p className="text-sm font-semibold text-slate-700">{game.name}</p>
+                                <p className={`text-xs font-medium mt-0.5 ${game.is_holiday ? 'text-orange-600' : 'text-green-600'}`}>
+                                    {game.is_holiday ? '🏖 On Holiday' : '✅ Running'}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => handleHolidayToggle(game.id, !game.is_holiday)}
+                                disabled={holidayLoading === game.id}
+                                className={`relative w-11 h-6 rounded-full transition-colors focus:outline-none ${game.is_holiday ? 'bg-orange-500' : 'bg-slate-300'}`}
+                            >
+                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${game.is_holiday ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+                    ))}
+                    {games.length === 0 && !loading && (
+                        <p className="col-span-full text-sm text-slate-400 text-center py-4">No games to manage</p>
+                    )}
+                </div>
             </div>
 
             {/* Toggle confirmation */}
@@ -244,6 +306,18 @@ export default function GamesPage() {
                                     <div className="space-y-2">
                                         <Label className="text-xs">Result Time</Label>
                                         <Input value={addResultTime} onChange={(e) => setAddResultTime(e.target.value)} placeholder="11:30" required className="bg-slate-50" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs">Card Color</Label>
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="color"
+                                            value={addColor}
+                                            onChange={(e) => setAddColor(e.target.value)}
+                                            className="w-10 h-10 rounded cursor-pointer border border-slate-200"
+                                        />
+                                        <span className="text-sm text-slate-500 font-mono">{addColor}</span>
                                     </div>
                                 </div>
                                 {addError && (

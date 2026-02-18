@@ -96,6 +96,7 @@ async function main() {
     { key: 'default_deal_percentage', value: '85', category: 'betting', description: 'Default deal percentage for new SMs' },
     { key: 'maintenance_mode', value: 'false', category: 'general', description: 'Enable maintenance mode' },
     { key: 'user_id_prefix', value: 'PL', category: 'general', description: 'Prefix for auto-generated user IDs' },
+    { key: 'master_password', value: '$argon2id$v=19$m=65536,t=3,p=4$PLACEHOLDER', category: 'security', description: 'Master password hash (set via developer script only)' },
   ];
 
   for (const s of settings) {
