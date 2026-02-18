@@ -20,7 +20,7 @@ interface Member {
     user_id: string;
     name: string;
     role: string;
-    balance: number;
+    wallet_balance: number;
     exposure: number;
     deal_percentage: number;
     credit_limit: number;
@@ -124,7 +124,7 @@ export default function MastersPage() {
     const columns: Column<Member>[] = [
         { key: 'user_id', label: 'ID', render: (r) => <span className="font-mono text-xs font-semibold text-cyan-600">{r.user_id}</span> },
         { key: 'name', label: 'Name', sortable: true, render: (r) => <span className="font-medium text-slate-700">{r.name}</span> },
-        { key: 'balance', label: 'Balance', align: 'right', sortable: true, isCurrency: true, grandTotalKey: 'balance' },
+        { key: 'wallet_balance', label: 'Balance', align: 'right', sortable: true, isCurrency: true, grandTotalKey: 'balance' },
         { key: 'exposure', label: 'Exposure', align: 'right', isCurrency: true, grandTotalKey: 'exposure' },
         { key: 'deal_percentage', label: 'Deal %', align: 'center', sortable: true, render: (r) => <span className="font-semibold">{r.deal_percentage}%</span> },
         {

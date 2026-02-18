@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { useSocketStore } from '@/store/socketStore';
+import { api } from '@/lib/api';
 import { FileText, BookOpen, Target, BookMarked, Lock, LogOut, ChevronRight, User, Wallet } from 'lucide-react';
 
 const menuItems = [
@@ -18,7 +20,22 @@ export default function UserProfilePage() {
     const { user, logout } = useAuthStore();
     const router = useRouter();
     const liveBalance = useSocketStore((s) => s.liveBalance);
-    const balance = liveBalance || 0;
+    const setLiveWallet = useSocketStore((s) => s.setLiveWallet);
+    const balance = liveBalance ?? 0;
+
+    // Fetch actual balance on mount so it shows correctly even before any WebSocket push
+    useEffect(() => {
+        api.get<{ wallet_balance: number; exposure: number; available_balance: number }>('/api/user/statement')
+            .then((res) => {
+                if (res.success && res.data) {
+                    setLiveWallet({
+                        wallet_balance: res.data.wallet_balance,
+                        exposure: res.data.exposure,
+                    });
+                }
+            })
+            .catch(() => { /* keep existing value */ });
+    }, [setLiveWallet]);
 
     const handleLogout = () => {
         logout();

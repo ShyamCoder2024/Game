@@ -20,7 +20,7 @@ interface Member {
     user_id: string;
     name: string;
     role: string;
-    balance: number;
+    wallet_balance: number;
     exposure: number;
     deal_percentage: number;
     credit_limit: number;
@@ -134,7 +134,7 @@ export default function SuperMastersPage() {
             key: 'role', label: 'Role', align: 'center',
             render: (r) => <Badge className={roleColors[r.role] || 'bg-slate-100 text-slate-600'}>{r.role}</Badge>,
         },
-        { key: 'balance', label: 'Balance', align: 'right', sortable: true, isCurrency: true, grandTotalKey: 'balance' },
+        { key: 'wallet_balance', label: 'Balance', align: 'right', sortable: true, isCurrency: true, grandTotalKey: 'balance' },
         { key: 'exposure', label: 'Exposure', align: 'right', isCurrency: true, grandTotalKey: 'exposure' },
         { key: 'deal_percentage', label: 'Deal %', align: 'center', sortable: true, render: (r) => <span className="font-semibold">{r.deal_percentage}%</span> },
         {

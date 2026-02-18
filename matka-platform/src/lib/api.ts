@@ -44,6 +44,18 @@ class ApiClient {
         return headers;
     }
 
+    /** Headers without Content-Type — used for requests with no body (e.g. DELETE) */
+    private getAuthHeaders(): HeadersInit {
+        const headers: HeadersInit = {};
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('matka_token');
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+        }
+        return headers;
+    }
+
     async get<T>(endpoint: string, params?: Record<string, string>): Promise<ApiResponse<T>> {
         // Handle relative URLs by using window.location.origin as base if needed
         const base = this.baseUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
@@ -101,7 +113,7 @@ class ApiClient {
     async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
             method: 'DELETE',
-            headers: this.getHeaders(),
+            headers: this.getAuthHeaders(),
         });
 
         return response.json();

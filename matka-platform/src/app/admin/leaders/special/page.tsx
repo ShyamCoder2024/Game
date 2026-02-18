@@ -11,7 +11,7 @@ import { Eye, Star } from 'lucide-react';
 
 interface SpecialMember {
     id: number; user_id: string; name: string; role: string;
-    balance: number; exposure: number; deal_percentage: number;
+    wallet_balance: number; exposure: number; deal_percentage: number;
     is_blocked: boolean;
 }
 
@@ -49,7 +49,7 @@ export default function SpecialMastersPage() {
             )
         },
         { key: 'role', label: 'Role', render: (r) => <Badge variant="secondary" className="text-xs capitalize">{r.role}</Badge> },
-        { key: 'balance', label: 'Balance', align: 'right', sortable: true, isCurrency: true, grandTotalKey: 'balance' },
+        { key: 'wallet_balance', label: 'Balance', align: 'right', sortable: true, isCurrency: true, grandTotalKey: 'balance' },
         { key: 'exposure', label: 'Exposure', align: 'right', isCurrency: true, grandTotalKey: 'exposure' },
         { key: 'deal_percentage', label: 'Deal %', align: 'center', render: (r) => <span className="font-semibold">{r.deal_percentage}%</span> },
         {

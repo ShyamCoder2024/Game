@@ -58,9 +58,22 @@ export default function UserHomePage() {
     const lastResult = useSocketStore((s) => s.lastResult);
     useSocketEvent(lastResult, () => { fetchResults(); });
 
-    // Live announcement updates
+    // Live announcement updates — fetch from API on mount, then update via WebSocket
     const lastAnnouncement = useSocketStore((s) => s.lastAnnouncement);
-    const [marqueeText, setMarqueeText] = useState('🎉 Welcome to Matka Platform! All games are live. Results updated in real-time. Good luck! 🍀');
+    const DEFAULT_MARQUEE = '🎉 Welcome to Matka Platform! All games are live. Results updated in real-time. Good luck! 🍀';
+    const [marqueeText, setMarqueeText] = useState(DEFAULT_MARQUEE);
+
+    useEffect(() => {
+        api.get<{ id: number; title: string; message: string }[]>('/api/user/announcements')
+            .then((res) => {
+                if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+                    const text = res.data.map((a) => `📢 ${a.title}: ${a.message}`).join('   •   ');
+                    setMarqueeText(text);
+                }
+            })
+            .catch(() => { /* keep default */ });
+    }, []);
+
     useSocketEvent(lastAnnouncement, (ann) => {
         setMarqueeText(`📢 ${ann.title}: ${ann.message}`);
     });

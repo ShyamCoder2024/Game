@@ -46,7 +46,7 @@ export function CoinTransferDialog({
             const res = await api.post(endpoint, {
                 user_id: userId,
                 amount: Number(amount),
-                note,
+                notes: note,
             });
 
             if (!res.success) {
