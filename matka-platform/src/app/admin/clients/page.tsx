@@ -38,8 +38,8 @@ export default function ClientsPage() {
     const fetchData = useCallback(async (p = 1, search = '') => {
         setLoading(true);
         try {
-            const res = await api.get<Client[]>('/api/clients/list', {
-                page: String(p), limit: '20', search,
+            const res = await api.get<Client[]>('/api/leaders/list', {
+                page: String(p), limit: '20', role: 'user', search,
             });
             if (res.success && res.data) {
                 setData(res.data);
@@ -59,9 +59,8 @@ export default function ClientsPage() {
         if (!blockTarget) return;
         setBlockLoading(true);
         try {
-            await api.put(`/api/admin/users/${blockTarget.user_id}/block`, {
-                is_blocked: !blockTarget.is_blocked,
-            });
+            const action = blockTarget.is_blocked ? 'unblock' : 'block';
+            await api.put(`/api/admin/users/${blockTarget.user_id}/${action}`);
             fetchData(page);
         } catch { /* graceful */ } finally {
             setBlockLoading(false); setBlockTarget(null);
@@ -106,7 +105,7 @@ export default function ClientsPage() {
                 actions={<Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white h-9" onClick={() => setCreateOpen(true)}><UserPlus size={14} className="mr-1" />Add Client</Button>}
             />
             <CreateAccountDialog open={createOpen} onClose={() => setCreateOpen(false)} onSuccess={() => fetchData(page)} defaultRole="user" />
-            {selectedClient && <CoinTransferDialog open={transferOpen} onClose={() => setTransferOpen(false)} onSuccess={() => fetchData(page)} userId={selectedClient.user_id} userName={selectedClient.name} type={transferType} />}
+            {selectedClient && <CoinTransferDialog open={transferOpen} onClose={() => setTransferOpen(false)} onSuccess={() => fetchData(page)} userId={selectedClient.id} userName={selectedClient.name} type={transferType} />}
             <ConfirmDialog open={!!blockTarget} onClose={() => setBlockTarget(null)} onConfirm={handleBlock}
                 title={`${blockTarget?.is_blocked ? 'Unblock' : 'Block'} ${blockTarget?.name || ''}?`}
                 message={blockTarget?.is_blocked ? 'This will restore access for this client.' : 'This will prevent this client from accessing the platform.'}

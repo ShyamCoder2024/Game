@@ -44,6 +44,7 @@ export default function GamesPage() {
     const [addCloseTime, setAddCloseTime] = useState('');
     const [addResultTime, setAddResultTime] = useState('');
     const [addLoading, setAddLoading] = useState(false);
+    const [addError, setAddError] = useState('');
     const [multiplierGame, setMultiplierGame] = useState<Game | null>(null);
     const [multipliers, setMultipliers] = useState<Multiplier[]>([]);
     const [mulLoading, setMulLoading] = useState(false);
@@ -72,16 +73,22 @@ export default function GamesPage() {
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
+        setAddError('');
         setAddLoading(true);
         try {
-            await api.post('/api/admin/games', {
+            const res = await api.post('/api/admin/games', {
                 name: addName, open_time: addOpenTime,
                 close_time: addCloseTime, result_time: addResultTime,
             });
+            if (!res.success) {
+                setAddError(res.error?.message || 'Failed to create game. Please try again.');
+                return;
+            }
+            // Only close and reset on success
             setAddOpen(false);
             setAddName(''); setAddOpenTime(''); setAddCloseTime(''); setAddResultTime('');
             fetchGames();
-        } catch { /* graceful */ } finally { setAddLoading(false); }
+        } catch { setAddError('Network error. Please try again.'); } finally { setAddLoading(false); }
     };
 
     const openMultipliers = async (game: Game) => {
@@ -216,9 +223,9 @@ export default function GamesPage() {
             {
                 addOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center">
-                        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setAddOpen(false)} />
+                        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setAddOpen(false); setAddError(''); }} />
                         <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
-                            <button onClick={() => setAddOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={18} /></button>
+                            <button onClick={() => { setAddOpen(false); setAddError(''); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={18} /></button>
                             <h3 className="text-lg font-semibold text-slate-800 mb-4">Add New Game</h3>
                             <form onSubmit={handleAdd} className="space-y-4">
                                 <div className="space-y-2">
@@ -239,9 +246,17 @@ export default function GamesPage() {
                                         <Input value={addResultTime} onChange={(e) => setAddResultTime(e.target.value)} placeholder="11:30" required className="bg-slate-50" />
                                     </div>
                                 </div>
-                                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={addLoading}>
-                                    {addLoading ? 'Adding...' : 'Add Game'}
-                                </Button>
+                                {addError && (
+                                    <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3 border border-red-100">
+                                        {addError}
+                                    </div>
+                                )}
+                                <div className="flex gap-3">
+                                    <Button type="button" variant="outline" className="flex-1" onClick={() => { setAddOpen(false); setAddError(''); }}>Cancel</Button>
+                                    <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" disabled={addLoading}>
+                                        {addLoading ? 'Adding...' : 'Add Game'}
+                                    </Button>
+                                </div>
                             </form>
                         </div>
                     </div>

@@ -24,7 +24,7 @@ export default function SMUsersPage() {
     const [data, setData] = useState<UserRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreate, setShowCreate] = useState(false);
-    const [coinTarget, setCoinTarget] = useState<{ id: string; name: string; mode: 'credit' | 'debit' } | null>(null);
+    const [coinTarget, setCoinTarget] = useState<{ id: number; name: string; mode: 'credit' | 'debit' } | null>(null);
     const [blockTarget, setBlockTarget] = useState<{ id: string; name: string; status: string } | null>(null);
 
     const fetchData = useCallback(async () => {
@@ -96,8 +96,8 @@ export default function SMUsersPage() {
             label: 'Actions',
             render: (row: UserRow) => (
                 <div className="flex items-center gap-1">
-                    <button onClick={() => setCoinTarget({ id: row.user_id, name: row.name, mode: 'credit' })} className="w-7 h-7 rounded bg-green-500 text-white text-xs font-bold hover:bg-green-600 transition-colors" title="Credit">D</button>
-                    <button onClick={() => setCoinTarget({ id: row.user_id, name: row.name, mode: 'debit' })} className="w-7 h-7 rounded bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors" title="Withdraw">W</button>
+                    <button onClick={() => setCoinTarget({ id: row.id, name: row.name, mode: 'credit' })} className="w-7 h-7 rounded bg-green-500 text-white text-xs font-bold hover:bg-green-600 transition-colors" title="Credit">D</button>
+                    <button onClick={() => setCoinTarget({ id: row.id, name: row.name, mode: 'debit' })} className="w-7 h-7 rounded bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors" title="Withdraw">W</button>
                     <button className="w-7 h-7 rounded bg-blue-500 text-white text-xs font-bold hover:bg-blue-600 transition-colors" title="View"><Eye size={14} className="mx-auto" /></button>
                     <button className="w-7 h-7 rounded bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-colors" title="Change Password"><Lock size={14} className="mx-auto" /></button>
                     <button onClick={() => setBlockTarget({ id: row.user_id, name: row.name, status: row.status })} className={`w-7 h-7 rounded text-white text-xs font-bold transition-colors ${row.status === 'active' ? 'bg-gray-500 hover:bg-gray-600' : 'bg-emerald-500 hover:bg-emerald-600'}`} title={row.status === 'active' ? 'Block' : 'Unblock'}>

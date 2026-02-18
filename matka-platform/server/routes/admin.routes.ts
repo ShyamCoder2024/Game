@@ -12,6 +12,7 @@ import {
     blockUnblockParamsSchema,
 } from '../validators/admin.schema';
 import { AppError } from '../utils/errors';
+import { prisma } from '../lib/prisma';
 
 export async function adminRoutes(app: FastifyInstance) {
 
@@ -113,6 +114,30 @@ export async function adminRoutes(app: FastifyInstance) {
         );
 
         return reply.send({ success: true, ...result });
+    });
+
+    // ==========================================
+    // BET BLOCK / UNBLOCK (A7)
+    // ==========================================
+
+    app.put('/users/:userId/bet-block', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+        const userId = parseInt(request.params.userId, 10);
+        if (isNaN(userId)) throw new AppError('VALIDATION_ERROR', 'Invalid user ID');
+
+        const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, is_bet_blocked: true } });
+        if (!user) throw new AppError('NOT_FOUND', 'User not found');
+
+        const updated = await prisma.user.update({
+            where: { id: userId },
+            data: { is_bet_blocked: !user.is_bet_blocked },
+            select: { id: true, is_bet_blocked: true },
+        });
+
+        return reply.send({
+            success: true,
+            data: updated,
+            message: updated.is_bet_blocked ? 'Betting blocked for user' : 'Betting unblocked for user',
+        });
     });
 
     // ==========================================

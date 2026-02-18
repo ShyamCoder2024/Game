@@ -25,8 +25,10 @@ export default function ContentPage() {
     const [newTitle, setNewTitle] = useState('');
     const [newMessage, setNewMessage] = useState('');
     const [addLoading, setAddLoading] = useState(false);
+    const [addError, setAddError] = useState('');
     const [rules, setRules] = useState('');
     const [rulesLoading, setRulesLoading] = useState(false);
+    const [rulesMsg, setRulesMsg] = useState('');
 
     const fetchContent = useCallback(async () => {
         setLoading(true);
@@ -44,12 +46,18 @@ export default function ContentPage() {
 
     const handleAddAnnouncement = async (e: React.FormEvent) => {
         e.preventDefault();
+        setAddError('');
         setAddLoading(true);
         try {
-            await api.post('/api/admin/announcements', { title: newTitle, message: newMessage });
+            const res = await api.post('/api/admin/announcements', { title: newTitle, message: newMessage });
+            if (!res.success) {
+                setAddError(res.error?.message || 'Failed to post announcement');
+                return;
+            }
+            // Only close on success
             setAddOpen(false); setNewTitle(''); setNewMessage('');
             fetchContent();
-        } catch { /* graceful */ } finally { setAddLoading(false); }
+        } catch { setAddError('Network error. Please try again.'); } finally { setAddLoading(false); }
     };
 
     const handleDeleteAnnouncement = async (id: number) => {
@@ -60,9 +68,13 @@ export default function ContentPage() {
     };
 
     const handleSaveRules = async () => {
-        setRulesLoading(true);
+        setRulesLoading(true); setRulesMsg('');
         try {
-            await api.put('/api/admin/rules', { content: rules });
+            const res = await api.put('/api/admin/rules', { content: rules });
+            if (res.success) {
+                setRulesMsg('Rules saved successfully!');
+                setTimeout(() => setRulesMsg(''), 3000);
+            }
         } catch { /* graceful */ } finally { setRulesLoading(false); }
     };
 
@@ -133,6 +145,7 @@ export default function ContentPage() {
                             className="w-full h-[300px] rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Enter platform rules here..."
                         />
+                        {rulesMsg && <p className="text-sm text-green-600 bg-green-50 rounded-lg p-2 mt-2">{rulesMsg}</p>}
                         <Button onClick={handleSaveRules} className="mt-3 bg-blue-600 hover:bg-blue-700 text-white" disabled={rulesLoading}>
                             <Save size={14} className="mr-1" />
                             {rulesLoading ? 'Saving...' : 'Save Rules'}
@@ -159,9 +172,17 @@ export default function ContentPage() {
                                     className="w-full h-24 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </div>
-                            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={addLoading}>
-                                {addLoading ? 'Posting...' : 'Post Announcement'}
-                            </Button>
+                            {addError && (
+                                <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3 border border-red-100">
+                                    {addError}
+                                </div>
+                            )}
+                            <div className="flex gap-3">
+                                <Button type="button" variant="outline" className="flex-1" onClick={() => { setAddOpen(false); setAddError(''); }}>Cancel</Button>
+                                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" disabled={addLoading}>
+                                    {addLoading ? 'Posting...' : 'Post Announcement'}
+                                </Button>
+                            </div>
                         </form>
                     </div>
                 </div>

@@ -24,7 +24,7 @@ export default function SMMastersPage() {
     const [data, setData] = useState<MasterRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreate, setShowCreate] = useState(false);
-    const [coinTarget, setCoinTarget] = useState<{ id: string; name: string; mode: 'credit' | 'debit' } | null>(null);
+    const [coinTarget, setCoinTarget] = useState<{ id: number; name: string; mode: 'credit' | 'debit' } | null>(null);
     const [blockTarget, setBlockTarget] = useState<{ id: string; name: string; status: string } | null>(null);
 
     const fetchData = useCallback(async () => {
@@ -98,12 +98,12 @@ export default function SMMastersPage() {
             render: (row: MasterRow) => (
                 <div className="flex items-center gap-1">
                     <button
-                        onClick={() => setCoinTarget({ id: row.user_id, name: row.name, mode: 'credit' })}
+                        onClick={() => setCoinTarget({ id: row.id, name: row.name, mode: 'credit' })}
                         className="w-7 h-7 rounded bg-green-500 text-white text-xs font-bold hover:bg-green-600 transition-colors"
                         title="Credit"
                     >D</button>
                     <button
-                        onClick={() => setCoinTarget({ id: row.user_id, name: row.name, mode: 'debit' })}
+                        onClick={() => setCoinTarget({ id: row.id, name: row.name, mode: 'debit' })}
                         className="w-7 h-7 rounded bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors"
                         title="Withdraw"
                     >W</button>

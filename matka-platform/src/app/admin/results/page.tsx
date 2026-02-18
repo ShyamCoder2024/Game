@@ -266,6 +266,9 @@ export default function ResultsPage() {
         return `${openResultForGame.single}${singleDigit}`;
     }, [session, pannaValid, openResultForGame, singleDigit]);
 
+    // A11: Block CLOSE declaration if OPEN not yet declared
+    const closeBlockedByMissingOpen = session === 'CLOSE' && !openResultForGame?.panna;
+
     // ==========================================
     // DATA FETCHING
     // ==========================================
@@ -604,11 +607,19 @@ export default function ResultsPage() {
                                 </div>
                             )}
 
+                            {/* A11: Warning when CLOSE is selected but OPEN not declared */}
+                            {closeBlockedByMissingOpen && (
+                                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+                                    <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                                    <span>Open result must be declared first before declaring the Close result for this game.</span>
+                                </div>
+                            )}
+
                             {/* Declare button */}
                             <Button
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-6"
                                 onClick={() => setConfirmDeclareOpen(true)}
-                                disabled={!pannaValid || declaring}
+                                disabled={!pannaValid || declaring || closeBlockedByMissingOpen}
                             >
                                 {declaring ? (
                                     <><Loader2 size={14} className="mr-1.5 animate-spin" /> Declaring...</>

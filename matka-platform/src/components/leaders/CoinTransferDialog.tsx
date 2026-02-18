@@ -14,7 +14,7 @@ interface CoinTransferDialogProps {
     open: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    userId: string;
+    userId: number;
     userName: string;
     type: 'credit' | 'debit';
 }
@@ -129,8 +129,8 @@ export function CoinTransferDialog({
                         <Button
                             type="submit"
                             className={`flex-1 ${isCredit
-                                    ? 'bg-green-600 hover:bg-green-700'
-                                    : 'bg-red-600 hover:bg-red-700'
+                                ? 'bg-green-600 hover:bg-green-700'
+                                : 'bg-red-600 hover:bg-red-700'
                                 } text-white`}
                             disabled={loading}
                         >

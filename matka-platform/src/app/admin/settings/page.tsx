@@ -29,6 +29,42 @@ export default function SettingsPage() {
     const [backupLoading, setBackupLoading] = useState(false);
     const [backupMsg, setBackupMsg] = useState('');
 
+    // Change Member Password (A6 fix)
+    const [memberUserId, setMemberUserId] = useState('');
+    const [memberNewPwd, setMemberNewPwd] = useState('');
+    const [memberPwdLoading, setMemberPwdLoading] = useState(false);
+    const [memberPwdMsg, setMemberPwdMsg] = useState('');
+    const [memberPwdError, setMemberPwdError] = useState('');
+
+    const handleMemberPasswordChange = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setMemberPwdMsg(''); setMemberPwdError('');
+        if (!memberUserId.trim() || memberNewPwd.length < 6) {
+            setMemberPwdError('Enter a valid User ID and password (min 6 chars)');
+            return;
+        }
+        setMemberPwdLoading(true);
+        try {
+            // Step 1: Look up member by user_id string to get numeric id
+            const searchRes = await api.get<{ id: number; user_id: string }[]>('/api/leaders/list', { search: memberUserId.trim(), limit: '5' });
+            const member = searchRes.data?.find((m) => m.user_id === memberUserId.trim());
+            if (!member) {
+                setMemberPwdError(`No member found with User ID: ${memberUserId}`);
+                return;
+            }
+            // Step 2: Change password using numeric id
+            const res = await api.put(`/api/leaders/${member.id}/password`, { new_password: memberNewPwd });
+            if (res.success) {
+                setMemberPwdMsg(`Password changed for ${memberUserId}`);
+                setMemberUserId(''); setMemberNewPwd('');
+            } else {
+                setMemberPwdError(res.error?.message || 'Failed to change password');
+            }
+        } catch {
+            setMemberPwdError('Network error. Please try again.');
+        } finally { setMemberPwdLoading(false); }
+    };
+
     const handlePasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
         setPwdMsg(''); setPwdError('');
@@ -172,6 +208,47 @@ export default function SettingsPage() {
                             <Download size={14} className="mr-1" />
                             {backupLoading ? 'Creating Backup...' : 'Create Backup'}
                         </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Change Member Password (A6) */}
+                <Card className="border-0 shadow-md">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                            <Lock size={16} className="text-orange-500" />
+                            Change Member Password
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleMemberPasswordChange} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-slate-600 text-sm">Member User ID</Label>
+                                <Input
+                                    value={memberUserId}
+                                    onChange={(e) => setMemberUserId(e.target.value)}
+                                    placeholder="e.g. SM001, MA002, US003"
+                                    className="bg-slate-50"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-slate-600 text-sm">New Password</Label>
+                                <Input
+                                    type="password"
+                                    value={memberNewPwd}
+                                    onChange={(e) => setMemberNewPwd(e.target.value)}
+                                    placeholder="Min 6 characters"
+                                    className="bg-slate-50"
+                                    required
+                                    minLength={6}
+                                />
+                            </div>
+                            {memberPwdError && <p className="text-sm text-red-600 bg-red-50 rounded-lg p-2">{memberPwdError}</p>}
+                            {memberPwdMsg && <p className="text-sm text-green-600 bg-green-50 rounded-lg p-2 flex items-center gap-1"><CheckCircle2 size={14} />{memberPwdMsg}</p>}
+                            <Button type="submit" className="bg-orange-600 hover:bg-orange-700 text-white" disabled={memberPwdLoading}>
+                                {memberPwdLoading ? 'Changing...' : 'Change Member Password'}
+                            </Button>
+                        </form>
                     </CardContent>
                 </Card>
             </div>

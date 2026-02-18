@@ -136,7 +136,7 @@ export default function SuperMastersPage() {
                     open={transferOpen}
                     onClose={() => setTransferOpen(false)}
                     onSuccess={() => fetchData(page)}
-                    userId={selectedMember.user_id}
+                    userId={selectedMember.id}
                     userName={selectedMember.name}
                     type={transferType}
                 />

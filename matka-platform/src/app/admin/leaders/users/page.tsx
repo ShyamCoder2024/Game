@@ -89,7 +89,7 @@ export default function UsersPage() {
                 actions={<Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white h-9" onClick={() => setCreateOpen(true)}><UserPlus size={14} className="mr-1" />Add User</Button>}
             />
             <CreateAccountDialog open={createOpen} onClose={() => setCreateOpen(false)} onSuccess={() => fetchData(page)} defaultRole="user" />
-            {selectedMember && <CoinTransferDialog open={transferOpen} onClose={() => setTransferOpen(false)} onSuccess={() => fetchData(page)} userId={selectedMember.user_id} userName={selectedMember.name} type={transferType} />}
+            {selectedMember && <CoinTransferDialog open={transferOpen} onClose={() => setTransferOpen(false)} onSuccess={() => fetchData(page)} userId={selectedMember.id} userName={selectedMember.name} type={transferType} />}
         </div>
     );
 }

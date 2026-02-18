@@ -19,7 +19,7 @@ interface ClientRow {
 export default function MasterClientsPage() {
     const [data, setData] = useState<ClientRow[]>([]);
     const [loading, setLoading] = useState(true);
-    const [coinTarget, setCoinTarget] = useState<{ id: string; name: string; mode: 'credit' | 'debit' } | null>(null);
+    const [coinTarget, setCoinTarget] = useState<{ id: number; name: string; mode: 'credit' | 'debit' } | null>(null);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -60,8 +60,8 @@ export default function MasterClientsPage() {
         {
             key: 'actions', label: 'Actions', render: (row: ClientRow) => (
                 <div className="flex items-center gap-1">
-                    <button onClick={() => setCoinTarget({ id: row.user_id, name: row.name, mode: 'credit' })} className="w-7 h-7 rounded bg-green-500 text-white text-xs font-bold hover:bg-green-600 transition-colors" title="Credit">D</button>
-                    <button onClick={() => setCoinTarget({ id: row.user_id, name: row.name, mode: 'debit' })} className="w-7 h-7 rounded bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors" title="Withdraw">W</button>
+                    <button onClick={() => setCoinTarget({ id: row.id, name: row.name, mode: 'credit' })} className="w-7 h-7 rounded bg-green-500 text-white text-xs font-bold hover:bg-green-600 transition-colors" title="Credit">D</button>
+                    <button onClick={() => setCoinTarget({ id: row.id, name: row.name, mode: 'debit' })} className="w-7 h-7 rounded bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors" title="Withdraw">W</button>
                     {row.status === 'active'
                         ? <button className="w-7 h-7 rounded bg-gray-500 text-white hover:bg-gray-600 transition-colors" title="Block"><Ban size={14} className="mx-auto" /></button>
                         : <button className="w-7 h-7 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors" title="Unblock"><CheckCircle2 size={14} className="mx-auto" /></button>

@@ -111,6 +111,7 @@ model User {
   is_special         Boolean   @default(false)
   special_notes      String?
   is_blocked         Boolean   @default(false)
+  is_bet_blocked     Boolean   @default(false)
   blocked_at         DateTime?
   blocked_by         Int?
   blocked_reason     String?
