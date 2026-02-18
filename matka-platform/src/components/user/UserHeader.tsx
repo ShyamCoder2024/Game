@@ -41,42 +41,33 @@ export function UserHeader() {
     const displayBalance = liveBalance !== null ? liveBalance : 0;
 
     return (
-        <header className="fixed top-0 left-0 right-0 bg-[#003366] text-white z-50 shadow-lg px-4 py-5 flex items-center justify-between" style={{ height: '70px' }}>
-            <div className="flex items-center justify-between max-w-lg mx-auto w-full">
-                <div className="flex items-center gap-2"> {/* Reduced gap for cohesion */}
-                    <div className="relative w-10 h-10">
-                        {/* Assuming the user will replace logo.png with their brand logo */}
-                        <Image
-                            src="/logo.png"
-                            alt="All India Matka"
-                            fill
-                            className="object-contain"
-                        />
-                    </div>
-                    <div>
-                        <h1 className="text-lg font-bold leading-tight tracking-wide font-serif text-[#FFF8E7]">
-                            All INDIA
-                        </h1>
-                        <p className="text-[10px] text-white/80 font-medium tracking-wider">
-                            Bet More. Win Money.
-                        </p>
-                    </div>
+        <header className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-100 z-50 px-4 py-3 flex items-center justify-between" style={{ height: '80px' }}>
+            <div className="flex items-center justify-between mx-auto w-full">
+                <div className="relative w-72 h-[72px]">
+                    <Image
+                        src="/Logo.png"
+                        alt="All India Matka"
+                        fill
+                        className="object-contain object-left"
+                        priority
+                        unoptimized
+                    />
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Link href="/user/notifications" className="relative p-2 rounded-full hover:bg-white/10 transition-colors">
-                        <Bell size={24} className="text-[#FFF8E7]" />
+                    <Link href="/user/notifications" className="relative p-2 rounded-full hover:bg-slate-100 transition-colors">
+                        <Bell size={24} className="text-slate-900" />
                         {hasNotifications && (
-                            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#003366]"></span>
+                            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-white"></span>
                         )}
                     </Link>
 
                     <div
-                        className={`flex items-center gap-1.5 bg-black/20 border border-white/10 rounded-full px-3 py-1.5 transition-all duration-300 ${flash ? 'ring-2 ring-yellow-400/50 scale-105 bg-black/30' : ''
+                        className={`flex items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-full px-3 py-1.5 transition-all duration-300 ${flash ? 'ring-2 ring-yellow-400/50 scale-105 bg-yellow-50' : ''
                             }`}
                     >
-                        <Coins size={18} strokeWidth={2.5} className="text-yellow-400" /> {/* Increased size & weight */}
-                        <span className="text-sm font-bold text-white">
+                        <Coins size={18} strokeWidth={2.5} className="text-yellow-600" />
+                        <span className="text-sm font-bold text-slate-900">
                             ₹{displayBalance.toLocaleString('en-IN')}
                         </span>
                     </div>

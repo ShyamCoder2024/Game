@@ -65,3 +65,24 @@ export function formatIndianNumber(num: number): string {
 export function delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+/**
+ * Format time to 12-hour format with AM/PM
+ * @param timeStr Time string in HH:mm or HH:mm:ss format (e.g., "13:00", "14:30:00")
+ */
+export function formatTime12Hour(timeStr: string): string {
+    if (!timeStr) return '';
+
+    // Check if already in 12-hour format
+    if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
+
+    const [hoursStr, minutesStr] = timeStr.split(':');
+    let hours = parseInt(hoursStr, 10);
+    const minutes = minutesStr;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+
+    return `${hours.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+}

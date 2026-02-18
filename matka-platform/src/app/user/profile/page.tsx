@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { useSocketStore } from '@/store/socketStore';
 import { api } from '@/lib/api';
 import { FileText, BookOpen, Target, BookMarked, Lock, LogOut, ChevronRight, User, Wallet } from 'lucide-react';
+import { TrustBadge } from '@/components/ui/TrustBadge';
 
 const menuItems = [
     { label: 'Statement', href: '/user/profile/statement', icon: FileText, description: 'Financial activity summary' },
@@ -151,7 +152,8 @@ export default function UserProfilePage() {
                     </div>
                 </div>
 
-                <div className="text-center pb-8">
+                <div className="text-center pb-8 space-y-3">
+                    <TrustBadge className="mx-auto" />
                     <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">
                         Version 1.0.0 • Secure
                     </p>

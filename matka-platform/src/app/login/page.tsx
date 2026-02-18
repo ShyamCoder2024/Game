@@ -13,11 +13,13 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { motion } from 'framer-motion';
-import { User, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { User, Lock, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
+import { TrustBadge } from '@/components/ui/TrustBadge';
 
 export default function LoginPage() {
     const [userId, setUserId] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const login = useAuthStore((s) => s.login);
@@ -72,7 +74,7 @@ export default function LoginPage() {
                 {/* Main Card - Solid White for High Contrast */}
                 <Card className="border-0 shadow-2xl bg-white ring-1 ring-white/5 rounded-2xl overflow-hidden">
 
-                    <CardHeader className="space-y-4 text-center pb-0 pt-8 px-6">
+                    <CardHeader className="space-y-2 text-center pb-0 pt-4 px-6">
                         {/* Logo Container - Restored Image */}
                         <motion.div
                             initial={{ y: -10, opacity: 0 }}
@@ -80,13 +82,14 @@ export default function LoginPage() {
                             transition={{ delay: 0.1 }}
                             className="mx-auto"
                         >
-                            <div className="relative w-24 h-24 mx-auto">
+                            <div className="relative w-72 h-28 mx-auto">
                                 <Image
-                                    src="/logo.png"
+                                    src="/Logo.png"
                                     alt="All India Logo"
                                     fill
                                     className="object-contain"
                                     priority
+                                    unoptimized
                                 />
                             </div>
                         </motion.div>
@@ -108,6 +111,15 @@ export default function LoginPage() {
                             >
                                 Please sign in to continue
                             </motion.p>
+
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.35 }}
+                                className="pt-2"
+                            >
+                                <TrustBadge />
+                            </motion.div>
                         </div>
                     </CardHeader>
 
@@ -152,13 +164,20 @@ export default function LoginPage() {
                                     </div>
                                     <Input
                                         id="password"
-                                        type="password"
+                                        type={showPassword ? 'text' : 'password'}
                                         placeholder="Enter your password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="h-11 pl-10 bg-slate-50 border-slate-200 text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-lg"
+                                        className="h-11 pl-10 pr-10 bg-slate-50 border-slate-200 text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-lg"
                                         required
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
                                 </div>
                             </motion.div>
 

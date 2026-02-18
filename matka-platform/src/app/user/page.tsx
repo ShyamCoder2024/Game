@@ -10,6 +10,7 @@ import { useSocketEvent } from '@/hooks/useSocketEvent';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { BannerCarousel } from '@/components/user/BannerCarousel';
+import { formatTime12Hour } from '@/lib/utils';
 
 interface GameResult {
     id: number;
@@ -40,13 +41,28 @@ export default function UserHomePage() {
         ];
 
         try {
-            const res = await api.get<GameResult[]>('/api/results', { filter: 'today' });
+            // Call the correct endpoint: /api/results/today
+            const res = await api.get<any[]>('/api/results/today');
+
             if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-                setResults(res.data);
+                // Map the nested API response to the flat GameResult structure
+                const mappedResults: GameResult[] = res.data.map((item) => ({
+                    id: item.game_id, // Use game_id as the ID for navigation
+                    game_name: item.game_name,
+                    game_color: item.color_code || '#003366',
+                    open_panna: item.open?.panna || '',
+                    open_single: item.open?.single || '',
+                    close_panna: item.close?.panna || '',
+                    close_single: item.close?.single || '',
+                    jodi: item.close?.jodi || '', // Jodi is in the close object
+                    time: formatTime12Hour(item.open_time || ''),
+                }));
+                setResults(mappedResults);
             } else {
                 setResults(fallbackResults);
             }
-        } catch {
+        } catch (error) {
+            console.error("Failed to fetch results:", error);
             setResults(fallbackResults);
         }
         setLoading(false);

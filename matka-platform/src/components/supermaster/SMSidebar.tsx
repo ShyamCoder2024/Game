@@ -42,20 +42,9 @@ export function SMSidebar({ open, onClose }: SMSidebarProps) {
             >
                 {/* Logo */}
                 <div className="h-16 flex items-center justify-between px-5 border-b border-white/10">
-                    <div className="flex items-center gap-2">
-                        <div className="relative w-10 h-10">
-                            <Image
-                                src="/logo.png"
-                                alt="Logo"
-                                fill
-                                className="object-contain"
-                            />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="font-bold text-base leading-tight">All India</span>
-                            <span className="text-xs text-slate-400">Super Master</span>
-                        </div>
-                    </div>
+                    <Link href="/supermaster" className="flex items-center gap-3">
+                        <span className="text-lg font-bold tracking-tight text-white">All India Bet</span>
+                    </Link>
                     <button onClick={onClose} className="lg:hidden p-1 hover:bg-white/10 rounded">
                         <X size={20} />
                     </button>

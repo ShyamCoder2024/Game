@@ -93,15 +93,7 @@ export function MasterSidebar({ open, onClose }: MasterSidebarProps) {
                 {/* Logo header */}
                 <div className="flex items-center justify-between h-16 px-5 border-b border-slate-700">
                     <Link href="/master" className="flex items-center gap-3">
-                        <div className="relative w-10 h-10">
-                            <Image
-                                src="/logo.png"
-                                alt="Logo"
-                                fill
-                                className="object-contain"
-                            />
-                        </div>
-                        <span className="text-lg font-bold tracking-tight">Master Panel</span>
+                        <span className="text-lg font-bold tracking-tight text-white">All India Bet</span>
                     </Link>
                     <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white">
                         <X size={20} />
