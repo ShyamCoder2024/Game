@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { api } from '@/lib/api';
+import { TimePicker12h } from '@/components/ui/TimePicker12h';
 import { BET_TYPES } from '@/lib/constants';
 import { motion } from 'framer-motion';
 import {
@@ -28,6 +29,10 @@ interface Game {
     open_time: string;
     close_time: string;
     result_time: string;
+    open_result_time?: string;
+    close_result_time?: string;
+    open_bet_close_time?: string;
+    close_bet_close_time?: string;
     display_order: number;
 }
 
@@ -63,9 +68,10 @@ export default function GamesPage() {
     // Add game
     const [addOpen, setAddOpen] = useState(false);
     const [addName, setAddName] = useState('');
-    const [addOpenTime, setAddOpenTime] = useState('');
-    const [addCloseTime, setAddCloseTime] = useState('');
-    const [addResultTime, setAddResultTime] = useState('');
+    const [addOpenResultTime, setAddOpenResultTime] = useState('');
+    const [addCloseResultTime, setAddCloseResultTime] = useState('12:00');
+    const [addOpenBetCloseTime, setAddOpenBetCloseTime] = useState('');
+    const [addCloseBetCloseTime, setAddCloseBetCloseTime] = useState('12:00');
     const [addColor, setAddColor] = useState('#3B82F6');
     const [addLoading, setAddLoading] = useState(false);
     const [addError, setAddError] = useState('');
@@ -73,9 +79,10 @@ export default function GamesPage() {
     // Edit game
     const [editGame, setEditGame] = useState<Game | null>(null);
     const [editName, setEditName] = useState('');
-    const [editOpenTime, setEditOpenTime] = useState('');
-    const [editCloseTime, setEditCloseTime] = useState('');
-    const [editResultTime, setEditResultTime] = useState('');
+    const [editOpenResultTime, setEditOpenResultTime] = useState('');
+    const [editCloseResultTime, setEditCloseResultTime] = useState('12:00');
+    const [editOpenBetCloseTime, setEditOpenBetCloseTime] = useState('');
+    const [editCloseBetCloseTime, setEditCloseBetCloseTime] = useState('12:00');
     const [editColor, setEditColor] = useState('#3B82F6');
     const [editLoading, setEditLoading] = useState(false);
     const [editError, setEditError] = useState('');
@@ -131,9 +138,10 @@ export default function GamesPage() {
             const res = await api.post('/api/admin/games', {
                 name: addName,
                 slug,
-                open_time: normalizeTime(addOpenTime),
-                close_time: normalizeTime(addCloseTime),
-                result_time: normalizeTime(addResultTime),
+                open_result_time: addOpenResultTime ? normalizeTime(addOpenResultTime) : undefined,
+                close_result_time: normalizeTime(addCloseResultTime),
+                open_bet_close_time: addOpenBetCloseTime ? normalizeTime(addOpenBetCloseTime) : undefined,
+                close_bet_close_time: normalizeTime(addCloseBetCloseTime),
                 color_code: addColor,
             });
             if (!res.success) {
@@ -141,7 +149,9 @@ export default function GamesPage() {
                 return;
             }
             setAddOpen(false);
-            setAddName(''); setAddOpenTime(''); setAddCloseTime(''); setAddResultTime(''); setAddColor('#3B82F6');
+            setAddName('');
+            setAddOpenResultTime(''); setAddCloseResultTime('12:00'); setAddOpenBetCloseTime(''); setAddCloseBetCloseTime('12:00');
+            setAddColor('#3B82F6');
             fetchGames();
         } catch { setAddError('Network error. Please try again.'); } finally { setAddLoading(false); }
     };
@@ -150,9 +160,10 @@ export default function GamesPage() {
     const openEdit = (game: Game) => {
         setEditGame(game);
         setEditName(game.name);
-        setEditOpenTime(game.open_time);
-        setEditCloseTime(game.close_time);
-        setEditResultTime(game.result_time);
+        setEditOpenResultTime(game.open_result_time || '');
+        setEditCloseResultTime(game.close_result_time || '');
+        setEditOpenBetCloseTime(game.open_bet_close_time || '');
+        setEditCloseBetCloseTime(game.close_bet_close_time || '');
         setEditColor(game.color_code || '#3B82F6');
         setEditError('');
     };
@@ -165,9 +176,10 @@ export default function GamesPage() {
         try {
             const res = await api.put(`/api/admin/games/${editGame.id}`, {
                 name: editName,
-                open_time: normalizeTime(editOpenTime),
-                close_time: normalizeTime(editCloseTime),
-                result_time: normalizeTime(editResultTime),
+                open_result_time: editOpenResultTime ? normalizeTime(editOpenResultTime) : null,
+                close_result_time: normalizeTime(editCloseResultTime),
+                open_bet_close_time: editOpenBetCloseTime ? normalizeTime(editOpenBetCloseTime) : null,
+                close_bet_close_time: normalizeTime(editCloseBetCloseTime),
                 color_code: editColor,
             });
             if (!res.success) {
@@ -439,18 +451,25 @@ export default function GamesPage() {
                                     <p className="text-xs text-slate-400">Slug: <span className="font-mono text-slate-600">{toSlug(addName)}</span></p>
                                 )}
                             </div>
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="space-y-2">
-                                    <Label className="text-xs">Open Time</Label>
-                                    <Input type="time" value={addOpenTime} onChange={(e) => setAddOpenTime(e.target.value)} required className="bg-slate-50" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs">Close Time</Label>
-                                    <Input type="time" value={addCloseTime} onChange={(e) => setAddCloseTime(e.target.value)} required className="bg-slate-50" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs">Result Time</Label>
-                                    <Input type="time" value={addResultTime} onChange={(e) => setAddResultTime(e.target.value)} required className="bg-slate-50" />
+                            <div>
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Result &amp; Bet Close Times</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Open Result Time</Label>
+                                        <TimePicker12h value={addOpenResultTime} onChange={setAddOpenResultTime} className="bg-slate-50" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Close Result Time <span className="text-red-400">*</span></Label>
+                                        <TimePicker12h value={addCloseResultTime} onChange={setAddCloseResultTime} required className="bg-slate-50" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Open Bet Close Time</Label>
+                                        <TimePicker12h value={addOpenBetCloseTime} onChange={setAddOpenBetCloseTime} className="bg-slate-50" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Close Bet Close Time <span className="text-red-400">*</span></Label>
+                                        <TimePicker12h value={addCloseBetCloseTime} onChange={setAddCloseBetCloseTime} required className="bg-slate-50" />
+                                    </div>
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -493,18 +512,25 @@ export default function GamesPage() {
                                 <Label>Game Name</Label>
                                 <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="e.g. KALYAN" required className="bg-slate-50" />
                             </div>
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="space-y-2">
-                                    <Label className="text-xs">Open Time</Label>
-                                    <Input type="time" value={editOpenTime} onChange={(e) => setEditOpenTime(e.target.value)} required className="bg-slate-50" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs">Close Time</Label>
-                                    <Input type="time" value={editCloseTime} onChange={(e) => setEditCloseTime(e.target.value)} required className="bg-slate-50" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs">Result Time</Label>
-                                    <Input type="time" value={editResultTime} onChange={(e) => setEditResultTime(e.target.value)} required className="bg-slate-50" />
+                            <div>
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Result &amp; Bet Close Times</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Open Result Time</Label>
+                                        <TimePicker12h value={editOpenResultTime} onChange={setEditOpenResultTime} className="bg-slate-50" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Close Result Time <span className="text-red-400">*</span></Label>
+                                        <TimePicker12h value={editCloseResultTime} onChange={setEditCloseResultTime} required className="bg-slate-50" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Open Bet Close Time</Label>
+                                        <TimePicker12h value={editOpenBetCloseTime} onChange={setEditOpenBetCloseTime} className="bg-slate-50" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs">Close Bet Close Time <span className="text-red-400">*</span></Label>
+                                        <TimePicker12h value={editCloseBetCloseTime} onChange={setEditCloseBetCloseTime} required className="bg-slate-50" />
+                                    </div>
                                 </div>
                             </div>
                             <div className="space-y-2">

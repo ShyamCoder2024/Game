@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
 import {
-    Lock, Shield, Database, Download, CheckCircle2, Percent,
+    Lock, Shield, Database, Download, CheckCircle2, Percent, TrendingDown, TrendingUp, Zap,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -43,6 +43,24 @@ export default function SettingsPage() {
     const [ratesLoading, setRatesLoading] = useState(false);
     const [ratesMsg, setRatesMsg] = useState('');
 
+    // Payout Multipliers
+    const BET_TYPES = [
+        { key: 'SINGLE_AKDA', label: 'Single Akda', color: 'blue' },
+        { key: 'SINGLE_PATTI', label: 'Single Patti', color: 'emerald' },
+        { key: 'DOUBLE_PATTI', label: 'Double Patti', color: 'amber' },
+        { key: 'TRIPLE_PATTI', label: 'Triple Patti', color: 'purple' },
+        { key: 'JODI', label: 'Jodi', color: 'rose' },
+    ] as const;
+    const [multipliers, setMultipliers] = useState<Record<string, string>>({
+        SINGLE_AKDA: '10',
+        SINGLE_PATTI: '160',
+        DOUBLE_PATTI: '320',
+        TRIPLE_PATTI: '700',
+        JODI: '100',
+    });
+    const [multipliersLoading, setMultipliersLoading] = useState(false);
+    const [multipliersMsg, setMultipliersMsg] = useState('');
+
     useEffect(() => {
         const fetchRates = async () => {
             const [dealRes, minRes, maxRes] = await Promise.allSettled([
@@ -53,6 +71,18 @@ export default function SettingsPage() {
             if (dealRes.status === 'fulfilled' && dealRes.value.data) setDealPct(dealRes.value.data.value);
             if (minRes.status === 'fulfilled' && minRes.value.data) setMinBet(minRes.value.data.value);
             if (maxRes.status === 'fulfilled' && maxRes.value.data) setMaxBet(maxRes.value.data.value);
+
+            // Fetch global payout multipliers
+            try {
+                const mRes = await api.get<{ bet_type: string; multiplier: number }[]>('/api/admin/games/global-multipliers');
+                if (mRes.data && mRes.data.length > 0) {
+                    const map: Record<string, string> = {};
+                    for (const m of mRes.data) {
+                        map[m.bet_type] = String(m.multiplier);
+                    }
+                    setMultipliers((prev) => ({ ...prev, ...map }));
+                }
+            } catch { /* use defaults */ }
         };
         fetchRates();
     }, []);
@@ -68,6 +98,21 @@ export default function SettingsPage() {
             setRatesMsg('Default rates saved!');
             setTimeout(() => setRatesMsg(''), 3000);
         } catch { /* graceful */ } finally { setRatesLoading(false); }
+    };
+
+    const handleSaveMultipliers = async () => {
+        setMultipliersLoading(true); setMultipliersMsg('');
+        try {
+            const payload = {
+                multipliers: Object.entries(multipliers).map(([bet_type, multiplier]) => ({
+                    bet_type,
+                    multiplier: parseInt(multiplier, 10),
+                })),
+            };
+            await api.put('/api/admin/games/multipliers', payload);
+            setMultipliersMsg('Payout multipliers saved!');
+            setTimeout(() => setMultipliersMsg(''), 3000);
+        } catch { /* graceful */ } finally { setMultipliersLoading(false); }
     };
 
     const handleMemberPasswordChange = async (e: React.FormEvent) => {
@@ -286,37 +331,67 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Default Rates */}
-                <Card className="border-0 shadow-md">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
-                            <Percent size={16} className="text-indigo-500" />
-                            Default Rates
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-sm text-slate-500">These values are used as defaults when creating new accounts and for bet limits platform-wide.</p>
-                        <div className="space-y-2">
-                            <Label className="text-xs">Default Deal Percentage (%)</Label>
-                            <Input value={dealPct} onChange={(e) => setDealPct(e.target.value)} type="number" min="0" max="100" className="bg-slate-50" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-2">
-                                <Label className="text-xs">Min Bet Amount (₹)</Label>
-                                <Input value={minBet} onChange={(e) => setMinBet(e.target.value)} type="number" min="1" className="bg-slate-50" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs">Max Bet Amount (₹)</Label>
-                                <Input value={maxBet} onChange={(e) => setMaxBet(e.target.value)} type="number" min="1" className="bg-slate-50" />
-                            </div>
-                        </div>
-                        {ratesMsg && <p className="text-sm text-green-600 bg-green-50 rounded-lg p-2 flex items-center gap-1"><CheckCircle2 size={14} />{ratesMsg}</p>}
-                        <Button onClick={handleSaveRates} disabled={ratesLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                            {ratesLoading ? 'Saving...' : 'Save Default Rates'}
-                        </Button>
-                    </CardContent>
-                </Card>
             </div>
+
+            {/* Payout Multipliers — full width */}
+            <Card className="border-0 shadow-md">
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                        <Zap size={16} className="text-amber-500" />
+                        Global Payout Multipliers
+                    </CardTitle>
+                    <p className="text-sm text-slate-500 mt-0.5">
+                        Default payout rates for all games. Per-game overrides can be set from the Games page.
+                    </p>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                        {BET_TYPES.map((bt) => (
+                            <div key={bt.key} className={`bg-${bt.color}-50 border border-${bt.color}-100 rounded-xl p-4 space-y-3`}>
+                                <div className="flex items-center justify-between">
+                                    <span className={`text-xs font-semibold text-${bt.color}-700 uppercase tracking-wide leading-tight`}>
+                                        {bt.label}
+                                    </span>
+                                    <span className={`text-xs font-bold text-${bt.color}-500`}>×</span>
+                                </div>
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    value={multipliers[bt.key] ?? ''}
+                                    onChange={(e) => setMultipliers((prev) => ({ ...prev, [bt.key]: e.target.value }))}
+                                    className={`bg-white border-${bt.color}-200 text-${bt.color}-800 font-bold text-xl h-12 text-center`}
+                                />
+                                <p className={`text-xs text-${bt.color}-500`}>
+                                    Pays {multipliers[bt.key] || '?'}× bet
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Summary */}
+                    <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-4 py-3 text-sm text-slate-600 flex-wrap">
+                        {BET_TYPES.map((bt) => (
+                            <span key={bt.key}>
+                                {bt.label}: <strong className="text-slate-800">{multipliers[bt.key]}×</strong>
+                            </span>
+                        ))}
+                    </div>
+
+                    {multipliersMsg && (
+                        <p className="text-sm text-green-600 bg-green-50 rounded-lg p-2 flex items-center gap-1">
+                            <CheckCircle2 size={14} />{multipliersMsg}
+                        </p>
+                    )}
+                    <Button
+                        onClick={handleSaveMultipliers}
+                        disabled={multipliersLoading}
+                        className="bg-amber-600 hover:bg-amber-700 text-white px-6"
+                    >
+                        <Zap size={14} className="mr-1" />
+                        {multipliersLoading ? 'Saving...' : 'Save Payout Rates'}
+                    </Button>
+                </CardContent>
+            </Card>
         </div>
     );
 }

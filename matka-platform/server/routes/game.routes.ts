@@ -88,6 +88,18 @@ export async function adminGameRoutes(app: FastifyInstance) {
         },
     });
 
+    // GET /api/admin/games/global-multipliers — Get current global default multipliers
+    app.get('/global-multipliers', {
+        handler: async (_request: FastifyRequest, reply) => {
+            const { prisma } = await import('../lib/prisma');
+            const multipliers = await prisma.payoutMultiplier.findMany({
+                where: { game_id: null, is_active: true },
+                orderBy: { bet_type: 'asc' },
+            });
+            return sendSuccess(reply, { data: multipliers });
+        },
+    });
+
     // PUT /api/admin/games/holiday-all — Toggle holiday for ALL games
     app.put('/holiday-all', {
         handler: async (request: FastifyRequest, reply) => {

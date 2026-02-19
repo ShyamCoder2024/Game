@@ -81,36 +81,38 @@ interface RollbackItem {
 // VALID PATTI NUMBERS (precomputed)
 // ==========================================
 
+/**
+ * Single Patti: all 3-digit combinations of 3 DISTINCT digits, represented
+ * in ascending canonical form (smallest digit first).
+ * Total = C(10,3) = 120 numbers.
+ */
 function generateSinglePattiNumbers(): string[] {
     const nums: string[] = [];
     for (let a = 0; a <= 9; a++) {
         for (let b = a + 1; b <= 9; b++) {
             for (let c = b + 1; c <= 9; c++) {
-                // All permutations of (a,b,c)
-                const perms = [
-                    `${a}${b}${c}`, `${a}${c}${b}`,
-                    `${b}${a}${c}`, `${b}${c}${a}`,
-                    `${c}${a}${b}`, `${c}${b}${a}`,
-                ];
-                perms.forEach(p => {
-                    if (!nums.includes(p)) nums.push(p);
-                });
+                // canonical: digits already in ascending order
+                nums.push(`${a}${b}${c}`);
             }
         }
     }
-    return nums.sort();
+    return nums.sort(); // already sorted but sort for safety
 }
 
+/**
+ * Double Patti: all 3-digit combinations where exactly 2 digits are the same.
+ * Canonical form = digits in ascending order.
+ * Total = C(10,2)*2 = 90 numbers  (pair digit can be >= or <= single digit).
+ */
 function generateDoublePattiNumbers(): string[] {
     const nums: string[] = [];
-    for (let a = 0; a <= 9; a++) {
-        for (let b = 0; b <= 9; b++) {
+    for (let a = 0; a <= 9; a++) {          // the repeated digit
+        for (let b = 0; b <= 9; b++) {      // the single different digit
             if (a === b) continue;
-            // Two of 'a' and one of 'b'
-            const combos = [`${a}${a}${b}`, `${a}${b}${a}`, `${b}${a}${a}`];
-            combos.forEach(p => {
-                if (!nums.includes(p)) nums.push(p);
-            });
+            // sort all three digits ascending → canonical
+            const digits = [a, a, b].sort((x, y) => x - y);
+            const canonical = digits.join('');
+            if (!nums.includes(canonical)) nums.push(canonical);
         }
     }
     return nums.sort();
@@ -142,6 +144,19 @@ function calculateSingle(panna: string): number {
 // MARKET SECTION COMPONENT
 // ==========================================
 
+/** Group patti numbers by their digit sum mod 10; each group sorted ascending */
+function groupByDigit(numbers: string[]): Record<number, string[]> {
+    const groups: Record<number, string[]> = {};
+    for (let d = 0; d <= 9; d++) groups[d] = [];
+    for (const num of numbers) {
+        const digit = num.split('').reduce((acc, c) => acc + parseInt(c, 10), 0) % 10;
+        groups[digit].push(num);
+    }
+    // Sort each group ascending
+    for (let d = 0; d <= 9; d++) groups[d].sort();
+    return groups;
+}
+
 function MarketSection({
     title,
     position,
@@ -155,6 +170,8 @@ function MarketSection({
     allNumbers: boolean;
     betData: Record<string, number>;
 }) {
+    const isGrouped = title.includes('Single Patti') || title.includes('Double Patti');
+
     const gridClass = title.includes('Single Akda')
         ? 'grid-cols-5 sm:grid-cols-10'
         : title.includes('Triple')
@@ -165,6 +182,19 @@ function MarketSection({
 
     const displayNumbers = allNumbers ? numbers : numbers.filter(n => betData[n] !== undefined);
     const numsToShow = allNumbers ? numbers : (displayNumbers.length > 0 ? numbers : []);
+
+    const DIGIT_COLORS: Record<number, string> = {
+        0: 'bg-slate-100 text-slate-700 border-slate-300',
+        1: 'bg-red-50 text-red-700 border-red-200',
+        2: 'bg-orange-50 text-orange-700 border-orange-200',
+        3: 'bg-amber-50 text-amber-700 border-amber-200',
+        4: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+        5: 'bg-lime-50 text-lime-700 border-lime-200',
+        6: 'bg-green-50 text-green-700 border-green-200',
+        7: 'bg-teal-50 text-teal-700 border-teal-200',
+        8: 'bg-blue-50 text-blue-700 border-blue-200',
+        9: 'bg-purple-50 text-purple-700 border-purple-200',
+    };
 
     return (
         <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
@@ -180,7 +210,45 @@ function MarketSection({
 
             {/* Number Grid */}
             <div className="p-3 bg-slate-50/50">
-                {numsToShow.length > 0 ? (
+                {isGrouped ? (
+                    // Grouped view for Single Patti and Double Patti
+                    <div className="space-y-2">
+                        {Object.entries(groupByDigit(numsToShow)).map(([digit, digitNums]) => (
+                            <div key={digit}>
+                                {/* Digit header */}
+                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-bold mb-1.5 ${DIGIT_COLORS[Number(digit)]}`}>
+                                    <span>Digit {digit}</span>
+                                    {digitNums.some(n => betData[n] > 0) && (
+                                        <span className="text-red-500 font-semibold">
+                                            {formatINR(digitNums.reduce((s, n) => s + (betData[n] || 0), 0))}
+                                        </span>
+                                    )}
+                                </div>
+                                {digitNums.length > 0 ? (
+                                    <div className="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-12 gap-1.5 mb-1">
+                                        {digitNums.map((num) => {
+                                            const amount = betData[num] || 0;
+                                            return (
+                                                <div
+                                                    key={num}
+                                                    className={`bg-white border rounded-lg p-1.5 text-center transition-all duration-150
+                                                        ${amount > 0 ? 'border-red-300 shadow-sm shadow-red-100' : 'border-slate-200 hover:border-blue-300'}`}
+                                                >
+                                                    <div className="font-mono font-bold text-slate-800 text-xs">{num}</div>
+                                                    <div className={`text-xs font-semibold mt-0.5 ${amount > 0 ? 'text-red-500' : 'text-slate-300'}`}>
+                                                        {formatINR(amount)}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-slate-300 italic mb-1 ml-1">No numbers</p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                ) : numsToShow.length > 0 ? (
                     <div className={`grid ${gridClass} gap-2`}>
                         {numsToShow.map((num) => {
                             const amount = betData[num] || 0;
@@ -211,6 +279,7 @@ function MarketSection({
 }
 
 // ==========================================
+
 // MAIN PAGE COMPONENT
 // ==========================================
 
@@ -400,53 +469,148 @@ export default function ResultsPage() {
                 </p>
             </div>
 
-            {/* Game + Session Selectors */}
-            <Card className="border-0 shadow-md">
-                <CardContent className="pt-5 pb-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
-                        <div className="space-y-1.5">
-                            <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                                Select Game
-                            </Label>
-                            <div className="relative">
-                                <select
-                                    value={selectedGameId ?? ''}
-                                    onChange={(e) => setSelectedGameId(Number(e.target.value) || null)}
-                                    className="w-full h-10 rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm
-                                               font-medium text-slate-700 appearance-none cursor-pointer
-                                               hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-                                               transition-all outline-none"
-                                >
-                                    <option value="">Choose game...</option>
-                                    {games.map((g) => (
-                                        <option key={g.id} value={g.id}>{g.name}</option>
-                                    ))}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            {/* ── TOP ROW: Game selectors (left) + Declare Result (right) ── */}
+            <div className="flex flex-col lg:flex-row gap-4">
+
+                {/* LEFT: Game + Session Selectors */}
+                <Card className="border-0 shadow-md lg:w-1/2">
+                    <CardContent className="pt-5 pb-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                    Select Game
+                                </Label>
+                                <div className="relative">
+                                    <select
+                                        value={selectedGameId ?? ''}
+                                        onChange={(e) => setSelectedGameId(Number(e.target.value) || null)}
+                                        className="w-full h-10 rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm
+                                                   font-medium text-slate-700 appearance-none cursor-pointer
+                                                   hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                                                   transition-all outline-none"
+                                    >
+                                        <option value="">Choose game...</option>
+                                        {games.map((g) => (
+                                            <option key={g.id} value={g.id}>{g.name}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                    Session
+                                </Label>
+                                <div className="relative">
+                                    <select
+                                        value={session}
+                                        onChange={(e) => setSession(e.target.value as 'OPEN' | 'CLOSE')}
+                                        className="w-full h-10 rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm
+                                                   font-medium text-slate-700 appearance-none cursor-pointer
+                                                   hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                                                   transition-all outline-none"
+                                    >
+                                        <option value="OPEN">Open</option>
+                                        <option value="CLOSE">Close</option>
+                                    </select>
+                                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                </div>
                             </div>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                                Session
-                            </Label>
-                            <div className="relative">
-                                <select
-                                    value={session}
-                                    onChange={(e) => setSession(e.target.value as 'OPEN' | 'CLOSE')}
-                                    className="w-full h-10 rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-sm
-                                               font-medium text-slate-700 appearance-none cursor-pointer
-                                               hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-                                               transition-all outline-none"
+                    </CardContent>
+                </Card>
+
+                {/* RIGHT: Declare Result */}
+                <Card className="border-0 shadow-md lg:w-1/2">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                            <Trophy size={16} className="text-amber-500" />
+                            Declare Result
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {!selectedGameId ? (
+                            <p className="text-sm text-slate-400 py-2 text-center">
+                                Select a game and session to declare a result
+                            </p>
+                        ) : (
+                            <div className="space-y-4">
+                                {/* Game + Session display */}
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                                        {selectedGame?.name}
+                                    </Badge>
+                                    <Badge variant="outline" className="capitalize">
+                                        {session}
+                                    </Badge>
+                                </div>
+
+                                {/* Panna input */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-sm text-slate-600">Enter Winning Panna</Label>
+                                    <Input
+                                        type="text"
+                                        inputMode="numeric"
+                                        maxLength={3}
+                                        value={panna}
+                                        onChange={(e) => setPanna(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                                        placeholder="e.g. 388"
+                                        className="bg-slate-50 font-mono text-lg tracking-widest max-w-[160px]"
+                                    />
+                                </div>
+
+                                {/* Auto-calculated preview */}
+                                {pannaValid && singleDigit !== null && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-1">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <TrendingUp size={14} className="text-blue-600" />
+                                            <span className="text-slate-600">
+                                                Panna: <span className="font-mono font-bold text-blue-700">{panna}</span>
+                                                {' → '}
+                                                Single: <span className="font-mono font-bold text-blue-700">{singleDigit}</span>
+                                            </span>
+                                        </div>
+                                        {jodiPreview && (
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <ArrowRightLeft size={14} className="text-blue-600" />
+                                                <span className="text-slate-600">
+                                                    Jodi: <span className="font-mono font-bold text-blue-700">{jodiPreview}</span>
+                                                    {' '}
+                                                    <span className="text-xs text-slate-400">
+                                                        (Open: {openResultForGame?.single}, Close: {singleDigit})
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* A11: Warning when CLOSE is selected but OPEN not declared */}
+                                {closeBlockedByMissingOpen && (
+                                    <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
+                                        <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                                        <span>Open result must be declared first before declaring the Close result for this game.</span>
+                                    </div>
+                                )}
+
+                                {/* Declare button */}
+                                <Button
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6"
+                                    onClick={() => setConfirmDeclareOpen(true)}
+                                    disabled={!pannaValid || declaring || closeBlockedByMissingOpen}
                                 >
-                                    <option value="OPEN">Open</option>
-                                    <option value="CLOSE">Close</option>
-                                </select>
-                                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    {declaring ? (
+                                        <><Loader2 size={14} className="mr-1.5 animate-spin" /> Declaring...</>
+                                    ) : (
+                                        <><Trophy size={14} className="mr-1.5" /> Declare Result</>
+                                    )}
+                                </Button>
                             </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                        )}
+                    </CardContent>
+                </Card>
+
+            </div>{/* end top row */}
 
             {/* ============================================= */}
             {/* SECTION 1: LIVE BET REPORT                    */}
@@ -539,98 +703,6 @@ export default function ResultsPage() {
                     )}
                 </div>
             )}
-
-            {/* ============================================= */}
-            {/* SECTION 2: RESULT DECLARATION FORM            */}
-            {/* ============================================= */}
-            <Card className="border-0 shadow-md">
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
-                        <Trophy size={16} className="text-amber-500" />
-                        Declare Result
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {!selectedGameId ? (
-                        <p className="text-sm text-slate-400 py-4 text-center">
-                            Select a game and session above to declare a result
-                        </p>
-                    ) : (
-                        <div className="space-y-4 max-w-md">
-                            {/* Game + Session display */}
-                            <div className="flex items-center gap-2 text-sm">
-                                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
-                                    {selectedGame?.name}
-                                </Badge>
-                                <Badge variant="outline" className="capitalize">
-                                    {session}
-                                </Badge>
-                            </div>
-
-                            {/* Panna input */}
-                            <div className="space-y-1.5">
-                                <Label className="text-sm text-slate-600">Enter Winning Panna</Label>
-                                <Input
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={3}
-                                    value={panna}
-                                    onChange={(e) => setPanna(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                                    placeholder="e.g. 388"
-                                    className="bg-slate-50 font-mono text-lg tracking-widest max-w-[160px]"
-                                />
-                            </div>
-
-                            {/* Auto-calculated preview */}
-                            {pannaValid && singleDigit !== null && (
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-1">
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <TrendingUp size={14} className="text-blue-600" />
-                                        <span className="text-slate-600">
-                                            Panna: <span className="font-mono font-bold text-blue-700">{panna}</span>
-                                            {' → '}
-                                            Single: <span className="font-mono font-bold text-blue-700">{singleDigit}</span>
-                                        </span>
-                                    </div>
-                                    {jodiPreview && (
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <ArrowRightLeft size={14} className="text-blue-600" />
-                                            <span className="text-slate-600">
-                                                Jodi: <span className="font-mono font-bold text-blue-700">{jodiPreview}</span>
-                                                {' '}
-                                                <span className="text-xs text-slate-400">
-                                                    (Open: {openResultForGame?.single}, Close: {singleDigit})
-                                                </span>
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* A11: Warning when CLOSE is selected but OPEN not declared */}
-                            {closeBlockedByMissingOpen && (
-                                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
-                                    <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                                    <span>Open result must be declared first before declaring the Close result for this game.</span>
-                                </div>
-                            )}
-
-                            {/* Declare button */}
-                            <Button
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-6"
-                                onClick={() => setConfirmDeclareOpen(true)}
-                                disabled={!pannaValid || declaring || closeBlockedByMissingOpen}
-                            >
-                                {declaring ? (
-                                    <><Loader2 size={14} className="mr-1.5 animate-spin" /> Declaring...</>
-                                ) : (
-                                    <><Trophy size={14} className="mr-1.5" /> Declare Result</>
-                                )}
-                            </Button>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
 
             {/* ============================================= */}
             {/* SECTION 3: TODAY'S DECLARED RESULTS TABLE      */}

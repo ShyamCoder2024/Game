@@ -63,7 +63,7 @@ async function main() {
     { bet_type: 'SINGLE_AKDA' as const, multiplier: 10 },
     { bet_type: 'SINGLE_PATTI' as const, multiplier: 160 },
     { bet_type: 'DOUBLE_PATTI' as const, multiplier: 320 },
-    { bet_type: 'TRIPLE_PATTI' as const, multiplier: 70 },
+    { bet_type: 'TRIPLE_PATTI' as const, multiplier: 700 },
     { bet_type: 'JODI' as const, multiplier: 100 },
   ];
 

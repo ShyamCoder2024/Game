@@ -60,7 +60,7 @@ const navItems: NavItem[] = [
 
 export function Sidebar({ open, onClose }: SidebarProps) {
     const pathname = usePathname();
-    const [expandedMenus, setExpandedMenus] = useState<string[]>(['Leaders']);
+    const [expandedMenus, setExpandedMenus] = useState<string[]>([]); // Leaders collapsed by default
 
     const toggleMenu = (label: string) => {
         setExpandedMenus((prev) =>

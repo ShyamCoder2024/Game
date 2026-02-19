@@ -14,9 +14,14 @@ const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 export const createGameSchema = z.object({
     name: z.string().min(1).max(100).trim(),
     slug: z.string().min(1).max(100).trim().regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
-    open_time: z.string().regex(timeRegex, 'Must be HH:mm format'),
-    close_time: z.string().regex(timeRegex, 'Must be HH:mm format'),
-    result_time: z.string().regex(timeRegex, 'Must be HH:mm format'),
+    // All time fields are optional — Prisma model has them as String?
+    open_time: z.string().regex(timeRegex).optional().default('00:00'),
+    close_time: z.string().regex(timeRegex).optional().default('00:00'),
+    result_time: z.string().regex(timeRegex).optional().default('00:00'),
+    open_result_time: z.string().regex(timeRegex).optional().default('00:00'),
+    close_result_time: z.string().regex(timeRegex).optional().default('00:00'),
+    open_bet_close_time: z.string().regex(timeRegex).optional().default('00:00'),
+    close_bet_close_time: z.string().regex(timeRegex).optional().default('00:00'),
     color_code: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color').default('#3B82F6'),
     display_order: z.number().int().min(0).default(0),
 });
@@ -29,6 +34,10 @@ export const updateGameSchema = z.object({
     open_time: z.string().regex(timeRegex, 'Must be HH:mm format').optional(),
     close_time: z.string().regex(timeRegex, 'Must be HH:mm format').optional(),
     result_time: z.string().regex(timeRegex, 'Must be HH:mm format').optional(),
+    open_result_time: z.string().regex(timeRegex, 'Must be HH:mm format').optional().nullable(),
+    close_result_time: z.string().regex(timeRegex, 'Must be HH:mm format').optional().nullable(),
+    open_bet_close_time: z.string().regex(timeRegex, 'Must be HH:mm format').optional().nullable(),
+    close_bet_close_time: z.string().regex(timeRegex, 'Must be HH:mm format').optional().nullable(),
     color_code: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
     display_order: z.number().int().min(0).optional(),
 });
