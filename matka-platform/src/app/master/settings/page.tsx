@@ -75,7 +75,7 @@ export default function MasterChangePasswordPage() {
                                 <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" required className="mt-1" />
                                 {confirmPassword && newPassword !== confirmPassword && <p className="text-xs text-red-500 mt-1">Passwords do not match</p>}
                             </div>
-                            <Button type="submit" disabled={selfLoading || newPassword !== confirmPassword} className="w-full bg-[#0891B2] hover:bg-[#0E7490]">{selfLoading ? 'Changing...' : 'Change Password'}</Button>
+                            <Button type="submit" disabled={selfLoading || newPassword !== confirmPassword} className="w-full bg-[#0891B2] hover:bg-[#0E7490] text-white">{selfLoading ? 'Changing...' : 'Change Password'}</Button>
                             {selfSuccess && <p className="text-sm text-green-600 flex items-center gap-1"><CheckCircle2 size={14} /> Password changed</p>}
                         </form>
                     </CardContent>
@@ -87,7 +87,7 @@ export default function MasterChangePasswordPage() {
                         <form onSubmit={handleDownlineChange} className="space-y-4">
                             <div><Label>User ID</Label><Input value={searchId} onChange={(e) => setSearchId(e.target.value)} placeholder="Enter user ID" required className="mt-1" /></div>
                             <div><Label>New Password</Label><Input type="password" value={downlinePassword} onChange={(e) => setDownlinePassword(e.target.value)} placeholder="Enter new password" required className="mt-1" /></div>
-                            <Button type="submit" disabled={downlineLoading} className="w-full bg-[#0891B2] hover:bg-[#0E7490]">{downlineLoading ? 'Updating...' : 'Update Password'}</Button>
+                            <Button type="submit" disabled={downlineLoading} className="w-full bg-[#0891B2] hover:bg-[#0E7490] text-white">{downlineLoading ? 'Updating...' : 'Update Password'}</Button>
                             {downlineSuccess && <p className="text-sm text-green-600 flex items-center gap-1"><CheckCircle2 size={14} /> Password updated</p>}
                         </form>
                     </CardContent>

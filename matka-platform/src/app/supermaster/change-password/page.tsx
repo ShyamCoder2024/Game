@@ -118,7 +118,7 @@ export default function SMChangePasswordPage() {
                                     <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
                                 )}
                             </div>
-                            <Button type="submit" disabled={selfLoading || newPassword !== confirmPassword} className="w-full bg-[#7C3AED] hover:bg-[#6D28D9]">
+                            <Button type="submit" disabled={selfLoading || newPassword !== confirmPassword} className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white">
                                 {selfLoading ? 'Changing...' : 'Change Password'}
                             </Button>
                             {selfSuccess && (
@@ -159,7 +159,7 @@ export default function SMChangePasswordPage() {
                                     className="mt-1"
                                 />
                             </div>
-                            <Button type="submit" disabled={downlineLoading} className="w-full bg-[#7C3AED] hover:bg-[#6D28D9]">
+                            <Button type="submit" disabled={downlineLoading} className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white">
                                 {downlineLoading ? 'Updating...' : 'Update Password'}
                             </Button>
                             {downlineSuccess && (

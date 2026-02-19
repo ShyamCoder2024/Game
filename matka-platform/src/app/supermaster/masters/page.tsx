@@ -137,7 +137,7 @@ export default function SMMastersPage() {
                         <p className="text-sm text-gray-500">Manage masters under your account</p>
                     </div>
                 </div>
-                <Button onClick={() => setShowCreate(true)} className="bg-[#7C3AED] hover:bg-[#6D28D9]">
+                <Button onClick={() => setShowCreate(true)} className="bg-[#7C3AED] hover:bg-[#6D28D9] text-white">
                     <Plus size={16} className="mr-1" /> Create Master
                 </Button>
             </div>

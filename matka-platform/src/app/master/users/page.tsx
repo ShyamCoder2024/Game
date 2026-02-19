@@ -107,7 +107,7 @@ export default function MasterUsersPage() {
                         <p className="text-sm text-gray-500">Manage users under your account</p>
                     </div>
                 </div>
-                <Button onClick={() => setShowCreate(true)} className="bg-[#0891B2] hover:bg-[#0E7490]">
+                <Button onClick={() => setShowCreate(true)} className="bg-[#0891B2] hover:bg-[#0E7490] text-white">
                     <Plus size={16} className="mr-1" /> Create User
                 </Button>
             </div>

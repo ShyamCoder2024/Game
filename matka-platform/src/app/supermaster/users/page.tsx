@@ -120,7 +120,7 @@ export default function SMUsersPage() {
                         <p className="text-sm text-gray-500">Manage users in your chain</p>
                     </div>
                 </div>
-                <Button onClick={() => setShowCreate(true)} className="bg-[#7C3AED] hover:bg-[#6D28D9]">
+                <Button onClick={() => setShowCreate(true)} className="bg-[#7C3AED] hover:bg-[#6D28D9] text-white">
                     <Plus size={16} className="mr-1" /> Create User
                 </Button>
             </div>
