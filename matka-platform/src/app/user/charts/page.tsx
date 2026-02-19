@@ -1,206 +1,209 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { BarChart3, ChevronDown } from 'lucide-react';
+import { Trophy, Clock, Search, Calendar } from 'lucide-react';
+import { GameResultCard } from '@/components/user/GameResultCard';
+import { ResultsListCard } from '@/components/user/ResultsListCard';
+import { formatTime12Hour } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
-interface ChartEntry {
-    date: string;
-    day: string;
+interface GameResult {
+    id: number;
+    game_name: string;
+    game_color: string;
     open_panna: string;
-    jodi: string;
+    open_single: string;
     close_panna: string;
+    close_single: string;
+    jodi: string;
+    time: string;
+    status: 'declared' | 'upcoming';
 }
 
-interface WeekData {
-    week_label: string;
-    entries: ChartEntry[];
-}
-
-const SAMPLE_GAMES = ['SRIDEVI', 'KALYAN', 'MILAN DAY', 'RAJDHANI', 'TIME BAZAR'];
-const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-
-export default function UserChartsPage() {
-    const [selectedGame, setSelectedGame] = useState(SAMPLE_GAMES[0]);
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [chartData, setChartData] = useState<WeekData[]>([]);
+export default function ResultsPage() {
+    const [activeTab, setActiveTab] = useState<'declared' | 'upcoming'>('declared');
+    const [results, setResults] = useState<GameResult[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const fetchChart = useCallback(async () => {
-        setLoading(true);
+    useEffect(() => {
+        const fetchResults = async () => {
+            setLoading(true);
+            try {
+                // Fetch declared results
+                const res = await api.get<any[]>('/api/results/today');
 
-        const generateSampleData = () => {
-            // Sample chart data — 4 weeks
-            const weeks: WeekData[] = [];
-            const sampleData = [
-                ['388', '90', '280'], ['147', '21', '560'], ['236', '**', '***'], ['579', '15', '348'],
-                ['456', '56', '123'], ['*', '**', '***'], ['789', '41', '234'],
-                ['123', '33', '567'], ['890', '89', '012'], ['345', '52', '678'],
-                ['678', '78', '901'], ['234', '23', '456'], ['567', '67', '890'], ['901', '91', '123'],
-                ['111', '12', '345'], ['222', '23', '456'], ['333', '34', '567'],
-                ['444', '45', '678'], ['555', '56', '789'], ['666', '67', '890'], ['777', '78', '901'],
-                ['888', '89', '012'], ['999', '90', '123'], ['100', '01', '234'],
-                ['200', '02', '345'], ['300', '03', '456'], ['400', '04', '567'], ['500', '05', '678'],
-            ];
-            for (let w = 0; w < 4; w++) {
-                const entries: ChartEntry[] = [];
-                for (let d = 0; d < 7; d++) {
-                    const idx = w * 7 + d;
-                    const sd = sampleData[idx] || ['*', '**', '***'];
-                    entries.push({
-                        date: `${10 + w * 7 + d}/01`,
-                        day: DAYS[d],
-                        open_panna: sd[0],
-                        jodi: sd[1],
-                        close_panna: sd[2],
-                    });
+                // Mocking upcoming results for now as API might not exist yet
+                // In production, this should come from an endpoint like /api/games/upcoming
+                const mockUpcoming = [
+                    { id: 101, game_name: 'MILAN NIGHT', game_color: '#3B82F6', time: '09:00 PM', status: 'upcoming' },
+                    { id: 102, game_name: 'RAJDHANI NIGHT', game_color: '#A855F7', time: '09:30 PM', status: 'upcoming' },
+                    { id: 103, game_name: 'KALYAN NIGHT', game_color: '#F97316', time: '11:00 PM', status: 'upcoming' },
+                    { id: 104, game_name: 'MAIN BAZAR', game_color: '#EF4444', time: '12:00 AM', status: 'upcoming' },
+                ];
+
+                if (activeTab === 'declared') {
+                    if (res.success && Array.isArray(res.data)) {
+                        const mappedResults: GameResult[] = res.data.map((item) => ({
+                            id: item.game_id,
+                            game_name: item.game_name,
+                            game_color: item.color_code || '#003366',
+                            open_panna: item.open?.panna || '***',
+                            open_single: item.open?.single || '*',
+                            close_panna: item.close?.panna || '***',
+                            close_single: item.close?.single || '*',
+                            jodi: item.close?.jodi || '**',
+                            time: formatTime12Hour(item.open_time || ''),
+                            status: 'declared',
+                        }));
+                        setResults(mappedResults);
+                    } else {
+                        setResults([]);
+                    }
+                } else {
+                    // For upcoming, we should ideally filter games that haven't opened yet
+                    // Using mock data for demonstration as requested
+                    const upcoming: GameResult[] = mockUpcoming.map(item => ({
+                        ...item,
+                        open_panna: '', open_single: '', close_panna: '', close_single: '', jodi: '',
+                        status: 'upcoming'
+                    })) as GameResult[];
+                    setResults(upcoming);
                 }
-                weeks.push({ week_label: `Week ${w + 1}`, entries });
+            } catch (error) {
+                console.error("Failed to fetch results:", error);
+                setResults([]);
+            } finally {
+                setLoading(false);
             }
-            return weeks;
         };
 
-        try {
-            const res = await api.get<WeekData[]>('/api/charts', { game: selectedGame });
-            if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-                setChartData(res.data);
-            } else {
-                setChartData(generateSampleData());
-            }
-        } catch {
-            setChartData(generateSampleData());
-        }
-        setLoading(false);
-    }, [selectedGame]);
+        fetchResults();
+    }, [activeTab]);
 
-    useEffect(() => { fetchChart(); }, [fetchChart]);
+    const filteredResults = results.filter(r =>
+        r.game_name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
-        <div className="space-y-6 pb-24 px-1">
-            {/* Header Section */}
-            <div className="sticky top-[70px] z-30 bg-[#F5F7FA]/95 backdrop-blur-md pb-2 pt-4 px-2">
-                <div className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <div className="min-h-screen bg-gray-50 pb-24">
+            {/* Header */}
+            <div className="sticky top-0 z-30 bg-[#003366] text-white shadow-lg pb-4 pt-4 px-4 rounded-b-3xl">
+                <div className="flex items-center justify-between mb-4">
                     <div>
-                        <h2 className="text-xl font-black text-[#003366] flex items-center gap-2 tracking-tight">
-                            <span className="bg-[#E6F0FF] p-1.5 rounded-lg text-[#003366]">
-                                <BarChart3 size={20} />
-                            </span>
-                            Charts
-                        </h2>
-                        <p className="text-[10px] text-gray-400 font-bold tracking-wider uppercase mt-1 ml-1">
-                            Historic Results
+                        <h1 className="text-xl font-black tracking-wide flex items-center gap-2">
+                            <Trophy size={20} className="text-yellow-400" />
+                            Results
+                        </h1>
+                        <p className="text-[10px] text-white/70 font-medium tracking-wider uppercase ml-7">
+                            Live & Upcoming
                         </p>
                     </div>
-
-                    {/* Premium Game Dropdown */}
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowDropdown(!showDropdown)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-200 ${showDropdown
-                                ? 'bg-[#003366] text-white border-[#003366] shadow-md'
-                                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-white hover:shadow-sm'
-                                }`}
-                        >
-                            {selectedGame}
-                            <ChevronDown
-                                size={14}
-                                className={`transition-transform duration-300 ${showDropdown ? 'rotate-180' : ''}`}
-                            />
-                        </button>
-
-                        {/* Dropdown Menu */}
-                        {showDropdown && (
-                            <>
-                                <div className="fixed inset-0 z-30" onClick={() => setShowDropdown(false)} />
-                                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl border border-gray-100 shadow-2xl z-40 overflow-hidden origin-top-right animate-in fade-in zoom-in-95 duration-200 ring-1 ring-black/5">
-                                    <div className="p-1">
-                                        <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50 mb-1">
-                                            Select Game
-                                        </div>
-                                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                                            {SAMPLE_GAMES.map((g) => (
-                                                <button
-                                                    key={g}
-                                                    onClick={() => { setSelectedGame(g); setShowDropdown(false); }}
-                                                    className={`w-full px-3 py-2.5 text-left text-xs font-bold rounded-lg transition-all flex items-center justify-between mb-0.5 ${g === selectedGame
-                                                        ? 'bg-[#E6F0FF] text-[#003366]'
-                                                        : 'text-gray-600 hover:bg-gray-50'
-                                                        }`}
-                                                >
-                                                    {g}
-                                                    {g === selectedGame && (
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-[#003366]" />
-                                                    )}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </>
-                        )}
+                    <div className="bg-white/10 p-2 rounded-full">
+                        <Calendar size={20} className="text-white" />
                     </div>
+                </div>
+
+                {/* Toggle */}
+                <div className="bg-[#002855] p-1 rounded-xl flex items-center relative">
+                    <button
+                        onClick={() => setActiveTab('declared')}
+                        className={`flex-1 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-300 relative z-10 ${activeTab === 'declared' ? 'text-[#003366] bg-white shadow-md' : 'text-white/60 hover:text-white'
+                            }`}
+                    >
+                        Results Declared
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('upcoming')}
+                        className={`flex-1 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-300 relative z-10 ${activeTab === 'upcoming' ? 'text-[#003366] bg-white shadow-md' : 'text-white/60 hover:text-white'
+                            }`}
+                    >
+                        Upcoming Results
+                    </button>
                 </div>
             </div>
 
-            {/* Chart Grid */}
-            {loading ? (
-                <div className="space-y-3">
-                    <div className="h-10 bg-white rounded-xl animate-pulse" />
-                    <div className="h-96 bg-white rounded-2xl animate-pulse shadow-sm" />
+            {/* Content */}
+            <div className="px-4 mt-4 space-y-4">
+                {/* Search (Optional but good for UX) */}
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <input
+                        type="text"
+                        placeholder="Search Game..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#003366]/20 font-medium placeholder:text-gray-400"
+                    />
                 </div>
-            ) : (
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                    {/* Day Headers */}
-                    <div className="grid grid-cols-7 bg-[#003366] text-white">
-                        {DAYS.map((day) => (
-                            <div key={day} className="py-3 text-center text-[10px] font-bold tracking-wider opacity-90">
-                                {day}
-                            </div>
+
+                {loading ? (
+                    <div className="space-y-3">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <Skeleton key={i} className="h-24 w-full rounded-2xl" />
                         ))}
                     </div>
-
-                    {/* Chart Body */}
-                    <div className="divide-y divide-gray-100">
-                        {chartData.map((week, widx) => (
-                            <div key={widx} className="grid grid-cols-7 divide-x divide-gray-100/50">
-                                {week.entries.map((entry, eidx) => (
-                                    <div
-                                        key={eidx}
-                                        className="relative py-2 px-0.5 min-h-[65px] flex flex-col items-center justify-center group hover:bg-gray-50 transition-colors"
-                                    >
-                                        {entry.open_panna === '*' ? (
-                                            <span className="text-gray-200 text-lg select-none">•</span>
-                                        ) : (
-                                            <>
-                                                {/* Open Panna */}
-                                                <span className="text-[9px] text-gray-400 font-medium leading-tight">
-                                                    {entry.open_panna}
-                                                </span>
-
-                                                {/* Jodi (Result) */}
-                                                <div className="w-8 h-7 my-0.5 rounded-lg bg-[#ebfcf5] text-[#059669] flex items-center justify-center text-sm font-black shadow-sm border border-[#059669]/10">
-                                                    {entry.jodi}
+                ) : filteredResults.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                            <Search size={24} className="text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 font-medium">No results found</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        <AnimatePresence mode="popLayout">
+                            {filteredResults.map((result, i) => (
+                                <motion.div
+                                    key={result.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ duration: 0.2, delay: i * 0.05 }}
+                                >
+                                    {activeTab === 'declared' ? (
+                                        <ResultsListCard
+                                            gameName={result.game_name}
+                                            gameColor={result.game_color}
+                                            openPanna={result.open_panna}
+                                            openSingle={result.open_single}
+                                            closePanna={result.close_panna}
+                                            closeSingle={result.close_single}
+                                            jodi={result.jodi}
+                                            time={result.time}
+                                        />
+                                    ) : (
+                                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 relative overflow-hidden flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div
+                                                    className="w-1.5 h-10 rounded-full"
+                                                    style={{ backgroundColor: result.game_color }}
+                                                />
+                                                <div>
+                                                    <h3 className="text-sm font-black text-gray-800 tracking-tight uppercase">
+                                                        {result.game_name}
+                                                    </h3>
+                                                    <div className="flex items-center gap-1.5 mt-1">
+                                                        <Clock size={12} className="text-gray-400" />
+                                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                                                            Result at {result.time}
+                                                        </span>
+                                                    </div>
                                                 </div>
-
-                                                {/* Close Panna */}
-                                                <span className="text-[9px] text-gray-400 font-medium leading-tight">
-                                                    {entry.close_panna}
-                                                </span>
-                                            </>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        ))}
+                                            </div>
+                                            <div className="bg-[#eff6ff] text-[#003366] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-[#003366]/10">
+                                                Upcoming
+                                            </div>
+                                        </div>
+                                    )}
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
                     </div>
-
-                    {/* Footer / Legend */}
-                    <div className="bg-gray-50 px-4 py-3 border-t border-gray-100 flex justify-between items-center text-[10px] text-gray-400 font-medium">
-                        <span>* Market Closed</span>
-                        <span>Updated: Live</span>
-                    </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

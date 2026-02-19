@@ -1,18 +1,25 @@
 'use client';
 
 import { useSocketStore } from '@/store/socketStore';
+import { useAuthStore } from '@/store/authStore';
 import Image from 'next/image';
-import { Coins, Bell } from 'lucide-react';
+import { Coins, Bell, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 
 export function UserHeader() {
+    const user = useAuthStore((s) => s.user);
     const liveBalance = useSocketStore((s) => s.liveBalance);
     // Flash animation when balance changes
     const [flash, setFlash] = useState(false);
     const prevBalance = useRef(liveBalance);
     const [hasNotifications, setHasNotifications] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         if (liveBalance !== null && prevBalance.current !== null && liveBalance !== prevBalance.current) {
@@ -62,14 +69,22 @@ export function UserHeader() {
                         )}
                     </Link>
 
-                    <div
-                        className={`flex items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-full px-3 py-1.5 transition-all duration-300 ${flash ? 'ring-2 ring-yellow-400/50 scale-105 bg-yellow-50' : ''
-                            }`}
-                    >
-                        <Coins size={18} strokeWidth={2.5} className="text-yellow-600" />
-                        <span className="text-sm font-bold text-slate-900">
-                            ₹{displayBalance.toLocaleString('en-IN')}
-                        </span>
+                    <div className="flex flex-col items-end mr-1 space-y-1">
+                        <div className="flex items-center justify-between gap-2 bg-[#003366] rounded-full px-3 py-1 border border-[#003366] shadow-sm w-[100px] h-[24px]">
+                            <User size={12} className="text-white" />
+                            <span className="text-[10px] font-bold text-white tracking-wider">
+                                {mounted && user?.user_id ? user.user_id : 'ID: --'}
+                            </span>
+                        </div>
+                        <div
+                            className={`flex items-center justify-between gap-2 bg-yellow-50 border border-yellow-200 rounded-full px-3 py-1 transition-all duration-300 w-[100px] h-[24px] ${flash ? 'ring-2 ring-yellow-400/50 scale-105' : ''
+                                }`}
+                        >
+                            <Coins size={12} strokeWidth={2.5} className="text-yellow-600" />
+                            <span className="text-[10px] font-bold text-slate-900">
+                                ₹{displayBalance.toLocaleString('en-IN')}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
