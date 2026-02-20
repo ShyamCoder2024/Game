@@ -35,7 +35,6 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-    { label: 'Dashboard', href: '/master', icon: LayoutDashboard },
     {
         label: 'Users',
         icon: Users,
@@ -43,11 +42,8 @@ const navItems: NavItem[] = [
             { label: 'Users', href: '/master/users', icon: User },
         ],
     },
-    { label: 'Games', href: '/master/games', icon: Gamepad2 },
     { label: 'Clients', href: '/master/clients', icon: UserPlus },
     { label: 'Results', href: '/master/results', icon: FileText },
-    { label: 'Settlement', href: '/master/settlement', icon: Scale },
-    { label: 'Content', href: '/master/content', icon: FileText },
     { label: 'Settings', href: '/master/settings', icon: Settings },
 ];
 

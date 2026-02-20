@@ -13,7 +13,7 @@ interface UserRow {
     id: number;
     user_id: string;
     name: string;
-    balance: number;
+    wallet_balance: number;
     deal_percentage: number;
     exposure: number;
     pnl: number;
@@ -30,14 +30,11 @@ export default function MasterUsersPage() {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await api.get<UserRow[]>('/api/leaders', { role: 'user' });
+            const res = await api.get<UserRow[]>('/api/leaders/list', { role: 'user' });
             if (res.success && res.data) setData(res.data);
+            else setData([]);
         } catch {
-            setData([
-                { id: 1, user_id: 'USR201', name: 'Player Alpha', balance: 35000, deal_percentage: 40, exposure: 4000, pnl: 7200, status: 'active' },
-                { id: 2, user_id: 'USR202', name: 'Player Beta', balance: 12000, deal_percentage: 35, exposure: 2000, pnl: -1500, status: 'active' },
-                { id: 3, user_id: 'USR203', name: 'Player Gamma', balance: 800, deal_percentage: 30, exposure: 0, pnl: -4200, status: 'blocked' },
-            ]);
+            setData([]);
         }
         setLoading(false);
     }, []);
@@ -56,7 +53,7 @@ export default function MasterUsersPage() {
     const columns: import('@/components/shared/DataTable').Column<UserRow>[] = [
         { key: 'user_id', label: 'User ID', render: (row: UserRow) => <span className="font-semibold text-[#059669]">{row.user_id}</span> },
         { key: 'name', label: 'Name' },
-        { key: 'balance', label: 'Balance', isCurrency: true },
+        { key: 'wallet_balance', label: 'Balance', isCurrency: true },
         { key: 'deal_percentage', label: 'Deal %', render: (row: UserRow) => <span>{row.deal_percentage}%</span> },
         { key: 'exposure', label: 'Exposure', isCurrency: true },
         {
@@ -90,10 +87,10 @@ export default function MasterUsersPage() {
     ];
 
     const totals = data.reduce((acc, row) => ({
-        balance: (acc.balance || 0) + row.balance,
+        wallet_balance: (acc.wallet_balance || 0) + row.wallet_balance,
         exposure: (acc.exposure || 0) + row.exposure,
         pnl: (acc.pnl || 0) + row.pnl,
-    }), { balance: 0, exposure: 0, pnl: 0 });
+    }), { wallet_balance: 0, exposure: 0, pnl: 0 });
 
     return (
         <div className="space-y-6">

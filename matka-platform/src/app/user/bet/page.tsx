@@ -6,8 +6,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
     Gamepad2, ChevronRight, AlertCircle, Coins, ArrowLeft, RefreshCw,
     CircleDot, Dice2, Copy, Crown, CheckCircle2,
-    RectangleVertical, GalleryVertical, SunMedium, MoonStar
+    RectangleVertical, GalleryVertical, SunMedium, MoonStar, X, CalendarX2
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '@/lib/api';
 import { useSocketStore } from '@/store/socketStore';
 import { useToastStore } from '@/store/toastStore';
@@ -31,6 +32,7 @@ interface Game {
     status: 'open' | 'closed';
     color_code: string;
     color?: string; // Fallback for legacy support
+    is_holiday?: boolean; // Added for holiday check
 }
 
 interface BetHistoryItem {
@@ -61,6 +63,8 @@ export default function UserBetPage() {
     const [session, setSession] = useState<'OPEN' | 'CLOSE'>('OPEN');
     const [placing, setPlacing] = useState(false);
     const [windowClosed, setWindowClosed] = useState(false);
+    const [showHolidayModal, setShowHolidayModal] = useState(false);
+    const [holidayGameName, setHolidayGameName] = useState('');
 
     const [recentBets, setRecentBets] = useState<BetHistoryItem[]>([]);
     const [loadingRecent, setLoadingRecent] = useState(true);
@@ -200,12 +204,18 @@ export default function UserBetPage() {
     useEffect(() => {
         if (gameIdParam && games.length > 0 && !selectedGame && step === 1) {
             const game = games.find((g) => g.id === Number(gameIdParam));
-            if (game) {
+            if (game && !game.is_holiday && game.status !== 'closed') {
                 setSelectedGame(game);
                 setStep(2);
+            } else if (game && game.is_holiday) {
+                // If it's a holiday and they navigated directly (via link like /user/bet?gameId=23)
+                // Show the popup immediately and clean the URL so they stay on the games list
+                setHolidayGameName(game.name);
+                setShowHolidayModal(true);
+                router.replace('/user/bet'); // Strip query param
             }
         }
-    }, [games, gameIdParam, selectedGame, step]);
+    }, [games, gameIdParam, selectedGame, step, router]);
 
     const handlePlaceBet = async () => {
         if (!selectedGame || !selectedBetType || !betNumber || !amount) return;
@@ -359,9 +369,17 @@ export default function UserBetPage() {
                                 {games.map((game) => (
                                     <button
                                         key={game.id}
-                                        disabled={game.status === 'closed'}
-                                        onClick={() => { setSelectedGame(game); setStep(2); setWindowClosed(false); }}
-                                        className={`w-full relative overflow-hidden group transition-all duration-300 ${game.status === 'closed'
+                                        disabled={game.status === 'closed' || game.is_holiday}
+                                        onClick={(e) => {
+                                            if (game.is_holiday) {
+                                                e.preventDefault();
+                                                setHolidayGameName(game.name);
+                                                setShowHolidayModal(true);
+                                            } else {
+                                                setSelectedGame(game); setStep(2); setWindowClosed(false);
+                                            }
+                                        }}
+                                        className={`w-full relative overflow-hidden group transition-all duration-300 ${game.status === 'closed' || game.is_holiday
                                             ? 'opacity-60 grayscale cursor-not-allowed'
                                             : 'hover:-translate-y-1 hover:shadow-lg active:scale-[0.98]'
                                             }`}
@@ -382,15 +400,16 @@ export default function UserBetPage() {
                                                     </div>
                                                 </div>
 
-                                                <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${game.status === 'open'
-                                                    ? 'bg-emerald-50 text-[#059669] border border-emerald-100'
-                                                    : 'bg-red-50 text-red-600 border border-red-100'
+                                                <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${game.is_holiday ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                                                    game.status === 'open'
+                                                        ? 'bg-emerald-50 text-[#059669] border border-emerald-100'
+                                                        : 'bg-red-50 text-red-600 border border-red-100'
                                                     }`}>
-                                                    {game.status === 'open' ? 'Live' : 'Closed'}
+                                                    {game.is_holiday ? 'Holiday' : game.status === 'open' ? 'Live' : 'Closed'}
                                                 </div>
                                             </div>
 
-                                            {game.status === 'open' && (
+                                            {game.status === 'open' && !game.is_holiday && (
                                                 <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-3">
                                                     <span className="text-xs text-gray-400 font-medium">Click to Play</span>
                                                     <div className="w-6 h-6 rounded-full bg-[#003366] flex items-center justify-center text-white">
@@ -681,6 +700,56 @@ export default function UserBetPage() {
                     </div>
                 )}
             </div>
+
+            {/* Holiday Modal */}
+            <AnimatePresence>
+                {showHolidayModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setShowHolidayModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6 flex flex-col items-center justify-center text-white relative">
+                                <button
+                                    onClick={() => setShowHolidayModal(false)}
+                                    className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 rounded-full p-1 transition-colors"
+                                >
+                                    <X size={20} />
+                                </button>
+                                <div className="bg-white/20 p-4 rounded-full mb-3 backdrop-blur-md">
+                                    <CalendarX2 size={40} className="text-white drop-shadow-md" />
+                                </div>
+                                <h3 className="text-xl font-black tracking-wide text-center uppercase drop-shadow-sm">Market Closed</h3>
+                            </div>
+
+                            <div className="p-6 text-center">
+                                <p className="text-gray-800 font-bold text-lg mb-2">
+                                    <span className="text-orange-500">{holidayGameName}</span> is on Holiday today.
+                                </p>
+                                <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+                                    Betting is temporarily paused for this market. Please check back tomorrow or try playing another exciting game!
+                                </p>
+
+                                <button
+                                    onClick={() => setShowHolidayModal(false)}
+                                    className="w-full py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-colors active:scale-95"
+                                >
+                                    View Other Games
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

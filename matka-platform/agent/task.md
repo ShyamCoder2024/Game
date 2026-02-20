@@ -2,7 +2,7 @@
 
 ## Phase 1: Critical Fixes
 - [ ] A1: Account Creation — Token Error (CRITICAL)
-- [ ] A2: Game Creation — Form Disappears (CRITICAL)
+- [x] A2: Game Creation — Form Disappears (CRITICAL)
 
 ## Phase 2: High Priority Fixes
 - [ ] A3: Client Section — Wrong API endpoint

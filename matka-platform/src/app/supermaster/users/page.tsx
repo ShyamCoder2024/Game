@@ -13,7 +13,7 @@ interface UserRow {
     id: number;
     user_id: string;
     name: string;
-    balance: number;
+    wallet_balance: number;
     deal_percentage: number;
     exposure: number;
     pnl: number;
@@ -30,14 +30,11 @@ export default function SMUsersPage() {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await api.get<UserRow[]>('/api/leaders', { role: 'user' });
+            const res = await api.get<UserRow[]>('/api/leaders/list', { role: 'user' });
             if (res.success && res.data) setData(res.data);
+            else setData([]);
         } catch {
-            setData([
-                { id: 1, user_id: 'USR101', name: 'Player One', balance: 42000, deal_percentage: 50, exposure: 5000, pnl: 8500, status: 'active' },
-                { id: 2, user_id: 'USR102', name: 'Player Two', balance: 18000, deal_percentage: 45, exposure: 3000, pnl: -2200, status: 'active' },
-                { id: 3, user_id: 'USR103', name: 'Player Three', balance: 5500, deal_percentage: 40, exposure: 0, pnl: 0, status: 'blocked' },
-            ]);
+            setData([]);
         }
         setLoading(false);
     }, []);
@@ -64,7 +61,7 @@ export default function SMUsersPage() {
             ),
         },
         { key: 'name', label: 'Name' },
-        { key: 'balance', label: 'Balance', isCurrency: true },
+        { key: 'wallet_balance', label: 'Balance', isCurrency: true },
         {
             key: 'deal_percentage',
             label: 'Deal %',

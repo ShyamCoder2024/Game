@@ -47,17 +47,26 @@ export function TimePicker12h({ value, onChange, required, className = '', id }:
     const handleMinute = (m: string) => onChange(to24h(parsed.hour, m, parsed.period));
     const handlePeriod = (p: 'AM' | 'PM') => onChange(to24h(parsed.hour, parsed.minute, p));
 
-    const selectBase = `bg-white border border-slate-200 rounded-md px-2 py-2 text-sm text-slate-800
-        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer ${className}`;
+    // Enhanced Tailwind styling for better UI/UX
+    const selectBase = `
+        appearance-none bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700
+        font-medium shadow-sm transition-all duration-200 ease-in-out
+        hover:border-blue-400 hover:bg-white
+        focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white
+        cursor-pointer
+        bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')]
+        bg-[length:12px_12px] bg-[position:right_6px_center] bg-no-repeat pr-5
+        ${className}
+    `;
 
     return (
-        <div className="flex items-center gap-1.5" id={id}>
+        <div className="flex items-center gap-1 group" id={id}>
             {/* Hour */}
             <select
                 value={parsed.hour}
                 onChange={(e) => handleHour(e.target.value)}
                 required={required}
-                className={`${selectBase} w-16`}
+                className={`${selectBase} min-w-[50px] text-center !pr-5`}
                 aria-label="Hour"
             >
                 {HOURS.map(h => (
@@ -65,14 +74,14 @@ export function TimePicker12h({ value, onChange, required, className = '', id }:
                 ))}
             </select>
 
-            <span className="text-slate-500 font-bold text-sm select-none">:</span>
+            <span className="text-slate-400 font-medium text-sm select-none group-hover:text-slate-600 transition-colors">:</span>
 
             {/* Minute */}
             <select
                 value={parsed.minute}
                 onChange={(e) => handleMinute(e.target.value)}
                 required={required}
-                className={`${selectBase} w-16`}
+                className={`${selectBase} min-w-[50px] text-center !pr-5`}
                 aria-label="Minute"
             >
                 {MINUTES.map(m => (
@@ -85,7 +94,7 @@ export function TimePicker12h({ value, onChange, required, className = '', id }:
                 value={parsed.period}
                 onChange={(e) => handlePeriod(e.target.value as 'AM' | 'PM')}
                 required={required}
-                className={`${selectBase} w-16 font-semibold`}
+                className={`${selectBase} min-w-[54px] font-semibold tracking-wide text-blue-700 bg-blue-50/50 border-blue-100 hover:border-blue-300 !pr-5 text-center`}
                 aria-label="AM or PM"
             >
                 <option value="AM">AM</option>

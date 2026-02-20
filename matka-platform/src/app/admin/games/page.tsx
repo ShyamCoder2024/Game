@@ -452,8 +452,8 @@ export default function GamesPage() {
                                 )}
                             </div>
                             <div>
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Result &amp; Bet Close Times</p>
-                                <div className="grid grid-cols-2 gap-3">
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Result &amp; Bet Close Times</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label className="text-xs">Open Result Time</Label>
                                         <TimePicker12h value={addOpenResultTime} onChange={setAddOpenResultTime} className="bg-slate-50" />
@@ -513,8 +513,8 @@ export default function GamesPage() {
                                 <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="e.g. KALYAN" required className="bg-slate-50" />
                             </div>
                             <div>
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Result &amp; Bet Close Times</p>
-                                <div className="grid grid-cols-2 gap-3">
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Result &amp; Bet Close Times</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label className="text-xs">Open Result Time</Label>
                                         <TimePicker12h value={editOpenResultTime} onChange={setEditOpenResultTime} className="bg-slate-50" />

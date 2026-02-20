@@ -8,9 +8,10 @@ import { GameResultCard } from '@/components/user/GameResultCard';
 import { useSocketStore } from '@/store/socketStore';
 import { useSocketEvent } from '@/hooks/useSocketEvent';
 import { Skeleton } from '@/components/ui/skeleton';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BannerCarousel } from '@/components/user/BannerCarousel';
 import { formatTime12Hour } from '@/lib/utils';
+import { X, CalendarX2 } from 'lucide-react';
 
 interface GameResult {
     id: number;
@@ -22,22 +23,25 @@ interface GameResult {
     close_single: string;
     jodi: string;
     time: string;
+    is_holiday: boolean;
 }
 
 export default function UserHomePage() {
     const [results, setResults] = useState<GameResult[]>([]);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState<'matka' | 'lottery'>('matka');
+    const [showHolidayModal, setShowHolidayModal] = useState(false);
+    const [holidayGameName, setHolidayGameName] = useState('');
 
     const fetchResults = useCallback(async () => {
         setLoading(true);
         const fallbackResults = [
-            { id: 1, game_name: 'SRIDEVI', game_color: '#22C55E', open_panna: '388', open_single: '9', close_panna: '280', close_single: '0', jodi: '90', time: '03:45 PM' },
-            { id: 2, game_name: 'KALYAN', game_color: '#F97316', open_panna: '147', open_single: '2', close_panna: '560', close_single: '1', jodi: '21', time: '05:15 PM' },
-            { id: 3, game_name: 'MILAN DAY', game_color: '#EAB308', open_panna: '236', open_single: '1', close_panna: '', close_single: '', jodi: '', time: '02:00 PM' },
-            { id: 4, game_name: 'RAJDHANI', game_color: '#A855F7', open_panna: '579', open_single: '1', close_panna: '348', close_single: '5', jodi: '15', time: '09:30 PM' },
-            { id: 5, game_name: 'TIME BAZAR', game_color: '#EF4444', open_panna: '456', open_single: '5', close_panna: '123', close_single: '6', jodi: '56', time: '01:30 PM' },
-            { id: 6, game_name: 'MILAN NIGHT', game_color: '#3B82F6', open_panna: '789', open_single: '4', close_panna: '', close_single: '', jodi: '', time: '10:00 PM' },
+            { id: 1, game_name: 'SRIDEVI', game_color: '#22C55E', open_panna: '388', open_single: '9', close_panna: '280', close_single: '0', jodi: '90', time: '03:45 PM', is_holiday: false },
+            { id: 2, game_name: 'KALYAN', game_color: '#F97316', open_panna: '147', open_single: '2', close_panna: '560', close_single: '1', jodi: '21', time: '05:15 PM', is_holiday: false },
+            { id: 3, game_name: 'MILAN DAY', game_color: '#EAB308', open_panna: '236', open_single: '1', close_panna: '', close_single: '', jodi: '', time: '02:00 PM', is_holiday: false },
+            { id: 4, game_name: 'RAJDHANI', game_color: '#A855F7', open_panna: '579', open_single: '1', close_panna: '348', close_single: '5', jodi: '15', time: '09:30 PM', is_holiday: false },
+            { id: 5, game_name: 'TIME BAZAR', game_color: '#EF4444', open_panna: '456', open_single: '5', close_panna: '123', close_single: '6', jodi: '56', time: '01:30 PM', is_holiday: false },
+            { id: 6, game_name: 'MILAN NIGHT', game_color: '#3B82F6', open_panna: '789', open_single: '4', close_panna: '', close_single: '', jodi: '', time: '10:00 PM', is_holiday: false },
         ];
 
         try {
@@ -56,6 +60,7 @@ export default function UserHomePage() {
                     close_single: item.close?.single || '',
                     jodi: item.close?.jodi || '', // Jodi is in the close object
                     time: formatTime12Hour(item.open_time || ''),
+                    is_holiday: !!item.is_holiday,
                 }));
                 setResults(mappedResults);
             } else {
@@ -154,18 +159,26 @@ export default function UserHomePage() {
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: i * 0.1 }}
                                     >
-                                        <Link href={`/user/bet?gameId=${r.id}`}>
-                                            <GameResultCard
-                                                gameName={r.game_name}
-                                                gameColor={r.game_color}
-                                                openPanna={r.open_panna}
-                                                openSingle={r.open_single}
-                                                closePanna={r.close_panna}
-                                                closeSingle={r.close_single}
-                                                jodi={r.jodi}
-                                                time={r.time}
-                                            />
-                                        </Link>
+                                        <div onClick={(e) => {
+                                            if (r.is_holiday) {
+                                                e.preventDefault();
+                                                setHolidayGameName(r.game_name);
+                                                setShowHolidayModal(true);
+                                            }
+                                        }}>
+                                            <Link href={r.is_holiday ? '#' : `/user/bet?gameId=${r.id}`}>
+                                                <GameResultCard
+                                                    gameName={r.game_name}
+                                                    gameColor={r.game_color}
+                                                    openPanna={r.open_panna}
+                                                    openSingle={r.open_single}
+                                                    closePanna={r.close_panna}
+                                                    closeSingle={r.close_single}
+                                                    jodi={r.jodi}
+                                                    time={r.time}
+                                                />
+                                            </Link>
+                                        </div>
                                     </motion.div>
                                 ))}
                             </div>
@@ -181,6 +194,56 @@ export default function UserHomePage() {
                     </div>
                 </>
             )}
+
+            {/* Holiday Modal */}
+            <AnimatePresence>
+                {showHolidayModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setShowHolidayModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6 flex flex-col items-center justify-center text-white relative">
+                                <button
+                                    onClick={() => setShowHolidayModal(false)}
+                                    className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 rounded-full p-1 transition-colors"
+                                >
+                                    <X size={20} />
+                                </button>
+                                <div className="bg-white/20 p-4 rounded-full mb-3 backdrop-blur-md">
+                                    <CalendarX2 size={40} className="text-white drop-shadow-md" />
+                                </div>
+                                <h3 className="text-xl font-black tracking-wide text-center uppercase drop-shadow-sm">Market Closed</h3>
+                            </div>
+
+                            <div className="p-6 text-center">
+                                <p className="text-gray-800 font-bold text-lg mb-2">
+                                    <span className="text-orange-500">{holidayGameName}</span> is on Holiday today.
+                                </p>
+                                <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+                                    Betting is temporarily paused for this market. Please check back tomorrow or try playing another exciting game!
+                                </p>
+
+                                <button
+                                    onClick={() => setShowHolidayModal(false)}
+                                    className="w-full py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-colors active:scale-95"
+                                >
+                                    View Other Games
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* WhatsApp FAB */}
             <a

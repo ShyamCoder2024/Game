@@ -13,7 +13,7 @@ interface MasterRow {
     id: number;
     user_id: string;
     name: string;
-    balance: number;
+    wallet_balance: number;
     deal_percentage: number;
     exposure: number;
     pnl: number;
@@ -30,15 +30,11 @@ export default function SMMastersPage() {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await api.get<MasterRow[]>('/api/leaders', { role: 'master' });
+            const res = await api.get<MasterRow[]>('/api/leaders/list', { role: 'master' });
             if (res.success && res.data) setData(res.data);
+            else setData([]);
         } catch {
-            // Graceful fallback — show placeholder data
-            setData([
-                { id: 1, user_id: 'MST001', name: 'Master Alpha', balance: 250000, deal_percentage: 70, exposure: 15000, pnl: 45000, status: 'active' },
-                { id: 2, user_id: 'MST002', name: 'Master Beta', balance: 180000, deal_percentage: 65, exposure: 22000, pnl: -12000, status: 'active' },
-                { id: 3, user_id: 'MST003', name: 'Master Gamma', balance: 95000, deal_percentage: 60, exposure: 8000, pnl: 5200, status: 'blocked' },
-            ]);
+            setData([]);
         }
         setLoading(false);
     }, []);
@@ -65,7 +61,7 @@ export default function SMMastersPage() {
             ),
         },
         { key: 'name', label: 'Name' },
-        { key: 'balance', label: 'Balance', isCurrency: true },
+        { key: 'wallet_balance', label: 'Balance', isCurrency: true },
         {
             key: 'deal_percentage',
             label: 'Deal %',
