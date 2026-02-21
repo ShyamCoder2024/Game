@@ -8,30 +8,27 @@ import { useRouter } from 'next/navigation';
 
 interface Bet {
     id: number;
-    game_name: string;
+    bet_id: string;
+    game: {
+        name: string;
+        color_code: string;
+    };
     bet_type: string;
-    number: string;
-    amount: number;
+    bet_number: string;
+    bet_amount: number;
     status: 'pending' | 'won' | 'lost';
-    multiplier: number;
-    result_amount?: number;
+    payout_multiplier: number;
+    win_amount: number;
     potential_win: number;
+    session: 'OPEN' | 'CLOSE';
     date: string;
+    created_at: string;
 }
 
 const statusConfig = {
     pending: { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', icon: Clock, label: 'Running' },
     won: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', icon: CheckCircle2, label: 'Won' },
     lost: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', icon: XCircle, label: 'Lost' },
-};
-
-const getSessionLabel = (betType: string) => {
-    // This logic might need adjustment based on actual data if session is stored differently
-    // Assuming 'Open' or 'Close' might be part of the bet type or derived
-    // For now, mapping known types or using a default if not present
-    if (betType.toLowerCase().includes('open')) return 'OPEN';
-    if (betType.toLowerCase().includes('close')) return 'CLOSE';
-    return 'OPEN'; // Default to OPEN if not specified, or handle logic based on time/game
 };
 
 const formatBetType = (type: string) => {
@@ -99,79 +96,76 @@ export default function UserBetsPage() {
                         {data.map((bet) => {
                             const config = statusConfig[bet.status] || statusConfig.pending;
                             const StatusIcon = config.icon;
-                            // Extract session from bet type or default (customize based on actual API data)
-                            const session = bet.bet_type.toLowerCase().includes('close') ? 'CLOSE' : 'OPEN';
-                            const displayType = bet.bet_type.replace(/_/g, ' ').replace('open', '').replace('close', '').trim() || bet.bet_type;
+                            const displayType = formatBetType(bet.bet_type);
+                            const gameName = bet.game?.name || 'UNKNOWN GAME';
+                            const gameColor = bet.game?.color_code || '#003366';
+                            const betDate = bet.created_at || bet.date;
 
                             return (
-                                <div key={bet.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div key={bet.id} className="bg-white rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100 overflow-hidden">
                                     {/* Header: Game Name & Date */}
-                                    <div className="bg-gray-50/50 px-4 py-3 flex items-center justify-between border-b border-gray-100">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-6 rounded-full bg-[#003366]" />
+                                    <div className="bg-gray-50/80 px-4 py-3 flex items-center justify-between border-b border-gray-100">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: gameColor }} />
                                             <div>
                                                 <h3 className="text-sm font-black text-gray-800 tracking-tight leading-none uppercase">
-                                                    {bet.game_name}
+                                                    {gameName}
                                                 </h3>
-                                                <span className="text-[10px] font-bold text-gray-400 tracking-wider">
-                                                    {new Date(bet.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })} • {new Date(bet.date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                                                <span className="text-[10px] font-bold text-gray-400 tracking-wider mt-1 block">
+                                                    {new Date(betDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })} • {new Date(betDate).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${config.bg} ${config.border} ${config.text}`}>
+                                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm ${config.bg} ${config.border} ${config.text}`}>
                                             <StatusIcon size={12} strokeWidth={3} />
                                             <span className="text-[10px] font-bold uppercase tracking-wide">{config.label}</span>
                                         </div>
                                     </div>
 
                                     {/* Body: Bet Details Grid */}
-                                    <div className="p-4">
-                                        <div className="grid grid-cols-2 gap-y-4 gap-x-2">
-                                            {/* Session */}
+                                    <div className="p-4 bg-white">
+                                        <div className="flex justify-between items-center mb-4">
                                             <div>
                                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Session</span>
-                                                <span className={`text-xs font-bold px-2 py-0.5 rounded-md inline-block ${session === 'OPEN' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}>
-                                                    {session}
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md inline-block uppercase tracking-wider ${bet.session === 'OPEN' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}>
+                                                    {bet.session || 'OPEN'}
                                                 </span>
                                             </div>
-
-                                            {/* Bet Type */}
                                             <div className="text-right">
                                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Bet Type</span>
-                                                <span className="text-xs font-bold text-gray-700 uppercase">
+                                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded-md">
                                                     {displayType}
                                                 </span>
                                             </div>
+                                        </div>
 
-                                            {/* Number/Panna */}
+                                        <div className="flex justify-between items-center bg-gray-50/80 rounded-xl p-3 border border-gray-100">
                                             <div>
                                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Selection</span>
-                                                <span className="text-base font-black text-slate-800 font-mono bg-slate-100 px-3 py-1 rounded-lg border border-slate-200 inline-block">
-                                                    {bet.number}
+                                                <span className="text-lg font-black text-slate-800 font-mono tracking-widest">
+                                                    {bet.bet_number}
                                                 </span>
                                             </div>
-
-                                            {/* Points/Amount */}
                                             <div className="text-right">
-                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Points</span>
-                                                <span className="text-base font-black text-[#003366]">
-                                                    {bet.amount}
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Coins</span>
+                                                <span className="text-lg font-black text-[#003366]">
+                                                    ₹{bet.bet_amount}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Footer: Financial/Status */}
-                                    <div className={`px-4 py-3 flex items-center justify-between border-t ${bet.status === 'won' ? 'bg-green-50/30 border-green-100' : bet.status === 'lost' ? 'bg-red-50/30 border-red-100' : 'bg-gray-50 border-gray-100'}`}>
-                                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                                    <div className={`px-4 py-3 flex items-center justify-between border-t transition-colors ${bet.status === 'won' ? 'bg-green-50/60 border-green-100' : bet.status === 'lost' ? 'bg-red-50/60 border-red-100' : 'bg-blue-50/30 border-blue-50'}`}>
+                                        <div className={`text-[10px] font-bold uppercase tracking-wider ${bet.status === 'won' ? 'text-green-700' : bet.status === 'lost' ? 'text-red-700' : 'text-blue-700'}`}>
                                             {bet.status === 'pending' ? 'Potential Win' : bet.status === 'won' ? 'You Won' : 'Result'}
                                         </div>
-                                        <div className={`text-sm font-black ${bet.status === 'won' ? 'text-green-600' : bet.status === 'lost' ? 'text-red-500' : 'text-gray-800'}`}>
+                                        <div className={`text-base font-black tracking-tight ${bet.status === 'won' ? 'text-green-600' : bet.status === 'lost' ? 'text-red-500' : 'text-blue-600'}`}>
                                             {bet.status === 'won'
-                                                ? `+₹${(bet.result_amount || 0).toLocaleString('en-IN')}`
+                                                ? `+₹${(bet.win_amount || 0).toLocaleString('en-IN')}`
                                                 : bet.status === 'lost'
                                                     ? 'Better Luck Next Time'
-                                                    : `₹${bet.potential_win.toLocaleString('en-IN')}`
+                                                    : `₹${(bet.potential_win || 0).toLocaleString('en-IN')}`
                                             }
                                         </div>
                                     </div>

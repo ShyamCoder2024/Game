@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { Trophy, Clock, Search, Calendar } from 'lucide-react';
+import { Trophy, Clock, Search, Calendar, ChevronDown, Check } from 'lucide-react';
 import { GameResultCard } from '@/components/user/GameResultCard';
 import { ResultsListCard } from '@/components/user/ResultsListCard';
 import { formatTime12Hour } from '@/lib/utils';
@@ -27,13 +27,16 @@ export default function ResultsPage() {
     const [results, setResults] = useState<GameResult[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedDate, setSelectedDate] = useState<'today' | 'yesterday'>('today');
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     useEffect(() => {
         const fetchResults = async () => {
             setLoading(true);
             try {
                 // Fetch declared results
-                const res = await api.get<any[]>('/api/results/today');
+                const endpoint = selectedDate === 'today' ? '/api/results/today' : '/api/results/today?date=yesterday';
+                const res = await api.get<any[]>(endpoint);
 
                 // Mocking upcoming results for now as API might not exist yet
                 // In production, this should come from an endpoint like /api/games/upcoming
@@ -81,7 +84,7 @@ export default function ResultsPage() {
         };
 
         fetchResults();
-    }, [activeTab]);
+    }, [activeTab, selectedDate]);
 
     const filteredResults = results.filter(r =>
         r.game_name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -101,8 +104,64 @@ export default function ResultsPage() {
                             Live & Upcoming
                         </p>
                     </div>
-                    <div className="bg-white/10 p-2 rounded-full">
-                        <Calendar size={20} className="text-white" />
+                    {/* Date Filter Dropdown */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+                            className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold tracking-wide transition-all shadow-sm ${isDatePickerOpen ? 'bg-white text-[#003366]' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                        >
+                            <Calendar size={14} className={isDatePickerOpen ? 'text-[#003366]' : 'text-white'} />
+                            {selectedDate === 'today' ? 'Today' : 'Yesterday'}
+                            <ChevronDown size={14} className={`transition-transform duration-200 ${isDatePickerOpen ? 'rotate-180 text-[#003366]' : 'text-white/70'}`} />
+                        </button>
+
+                        <AnimatePresence>
+                            {isDatePickerOpen && (
+                                <>
+                                    {/* Invisible Overlay to close on click outside */}
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setIsDatePickerOpen(false)}
+                                    />
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] border border-gray-100 overflow-hidden z-50 text-gray-800"
+                                    >
+                                        <div className="p-1.5 space-y-1">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedDate('today');
+                                                    setIsDatePickerOpen(false);
+                                                }}
+                                                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${selectedDate === 'today'
+                                                        ? 'bg-blue-50 text-[#003366]'
+                                                        : 'hover:bg-gray-100 text-gray-600'
+                                                    }`}
+                                            >
+                                                <span>Today's Results</span>
+                                                {selectedDate === 'today' && <Check size={16} className="text-[#003366]" />}
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedDate('yesterday');
+                                                    setIsDatePickerOpen(false);
+                                                }}
+                                                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${selectedDate === 'yesterday'
+                                                        ? 'bg-blue-50 text-[#003366]'
+                                                        : 'hover:bg-gray-100 text-gray-600'
+                                                    }`}
+                                            >
+                                                <span>Yesterday's Results</span>
+                                                {selectedDate === 'yesterday' && <Check size={16} className="text-[#003366]" />}
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 

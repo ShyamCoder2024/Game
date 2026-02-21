@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookOpen, ArrowLeft, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { BookOpen, ArrowLeft, TrendingUp, TrendingDown, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { TRANSACTION_LABELS } from '@/lib/constants';
@@ -12,14 +12,19 @@ interface Transaction {
     amount: number;
     type: string;
     note: string;
+    created_at: string;
     date: string;
     balance_after: number;
 }
 
 const getTypeColor = (type: string) => {
-    if (['CREDIT_IN', 'BET_WON', 'ROLLBACK_DEBIT', 'LOAN_IN'].includes(type)) return 'bg-green-50 text-green-600';
-    if (['CREDIT_OUT', 'BET_PLACED', 'WITHDRAWAL', 'LOAN_REPAYMENT'].includes(type)) return 'bg-red-50 text-red-600';
-    return 'bg-gray-50 text-gray-600';
+    if (['CREDIT_IN', 'BET_WON', 'ROLLBACK_DEBIT', 'LOAN_IN'].includes(type)) return 'text-green-600 bg-green-50 border-green-100';
+    if (['CREDIT_OUT', 'BET_PLACED', 'WITHDRAWAL', 'LOAN_REPAYMENT'].includes(type)) return 'text-red-600 bg-red-50 border-red-100';
+    return 'text-gray-600 bg-gray-50 border-gray-100';
+};
+
+const getIcon = (amount: number) => {
+    return amount >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />;
 };
 
 export default function UserLedgerPage() {
@@ -55,9 +60,9 @@ export default function UserLedgerPage() {
                         <ArrowLeft size={20} className="text-white" />
                     </button>
                     <div>
-                        <h1 className="text-lg font-bold tracking-wide">Ledger</h1>
+                        <h1 className="text-lg font-bold tracking-wide">Ledger Logs</h1>
                         <p className="text-[10px] text-white/70 font-medium tracking-wider uppercase">
-                            Detailed Transactions
+                            Detailed Transaction History
                         </p>
                     </div>
                 </div>
@@ -66,8 +71,8 @@ export default function UserLedgerPage() {
             <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
                 {loading ? (
                     <div className="space-y-3">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                            <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <Skeleton key={i} className="h-28 w-full rounded-2xl" />
                         ))}
                     </div>
                 ) : data.length === 0 ? (
@@ -80,33 +85,54 @@ export default function UserLedgerPage() {
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {data.map((row) => (
-                            <div key={row.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 relative overflow-hidden group">
-                                <div className="flex items-start justify-between mb-2">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-2.5 rounded-xl ${getTypeColor(row.type)}`}>
-                                            {row.amount >= 0 ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
+                        {data.map((row) => {
+                            const isCredit = row.amount >= 0;
+                            const timestamp = row.created_at || row.date;
+                            const colorClass = getTypeColor(row.type);
+
+                            return (
+                                <div key={row.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative group transition-all hover:shadow-md">
+                                    {/* Left Accent Bar */}
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${isCredit ? 'bg-green-500' : 'bg-red-500'}`} />
+
+                                    <div className="p-4 pl-5">
+                                        <div className="flex justify-between items-start mb-3">
+                                            {/* Transaction Type & Date */}
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${colorClass}`}>
+                                                        {TRANSACTION_LABELS[row.type as keyof typeof TRANSACTION_LABELS] || row.type.replace(/_/g, ' ')}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm font-bold text-gray-800 leading-tight">
+                                                    {row.note}
+                                                </p>
+                                                <span className="text-[10px] text-gray-400 font-medium mt-1 inline-block">
+                                                    {new Date(timestamp).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })} • {new Date(timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+
+                                            {/* Amount Details */}
+                                            <div className="text-right flex flex-col items-end">
+                                                <div className={`flex items-center gap-1 font-black text-lg ${isCredit ? 'text-green-600' : 'text-red-500'}`}>
+                                                    {isCredit ? '+' : ''}₹{Math.abs(row.amount).toLocaleString('en-IN')}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                                                {TRANSACTION_LABELS[row.type as keyof typeof TRANSACTION_LABELS] || row.type}
-                                            </p>
-                                            <p className="text-sm font-bold text-gray-800 mt-0.5">{row.note}</p>
+
+                                        {/* Closing Balance Footer */}
+                                        <div className="flex justify-between items-center pt-3 mt-1 border-t border-gray-50">
+                                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                                Closing Balance
+                                            </span>
+                                            <span className="text-sm font-black text-[#003366] font-mono bg-[#003366]/5 px-2 py-0.5 rounded">
+                                                ₹{row.balance_after.toLocaleString('en-IN')}
+                                            </span>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <span className={`text-sm font-black block ${row.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {row.amount >= 0 ? '+' : ''}₹{Math.abs(row.amount).toLocaleString('en-IN')}
-                                        </span>
-                                        <span className="text-[10px] text-gray-400 block mt-1">{new Date(row.date).toLocaleDateString()}</span>
-                                    </div>
                                 </div>
-                                <div className="flex items-center justify-between pt-3 border-t border-gray-50 mt-2">
-                                    <span className="text-[10px] text-gray-400 font-medium tracking-wider uppercase">Closing Balance</span>
-                                    <span className="text-xs font-bold text-[#003366]">₹{row.balance_after.toLocaleString('en-IN')}</span>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
